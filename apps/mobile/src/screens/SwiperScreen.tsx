@@ -16,7 +16,7 @@ export function SwiperScreen({ onBack }: Props) {
   const { formatMessage } = useIntl();
 
   return (
-    <Box className="w-full max-w-3xl flex-1 self-center p-6">
+    <Box className="w-full max-w-3xl flex-1 self-center bg-background p-6">
       <HStack space="md" className="items-center">
         <Button
           accessibilityLabel={formatMessage({ id: 'actions.back' })}
