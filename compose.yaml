@@ -1,0 +1,44 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgres://squinder:squinder@postgres:5432/squinder
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - '3001:3000'
+
+  postgres:
+    image: pgvector/pgvector:pg18
+    environment:
+      POSTGRES_DB: squinder
+      POSTGRES_PASSWORD: squinder
+      POSTGRES_USER: squinder
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U squinder -d squinder']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./apps/api/docker/postgres:/docker-entrypoint-initdb.d
+
+volumes:
+  postgres-data:
