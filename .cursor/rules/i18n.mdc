@@ -1,0 +1,18 @@
+---
+description: Enforce JSON-backed ICU localization for all Expo user-facing text
+globs: apps/mobile/**/*.{ts,tsx,json}
+alwaysApply: false
+---
+
+# Expo i18n
+
+- Never hardcode user-facing copy in TS/TSX, including placeholders, errors, labels, accessibility text, and status names.
+- Store messages in `apps/mobile/src/i18n/messages/<locale>.json`.
+- Use stable semantic keys such as `onboarding.name.title`, not English copy as keys.
+- Render messages through `react-intl` (`useIntl`, `formatMessage`, `formatDate`, `formatTime`).
+- Use ICU MessageFormat for interpolation, `plural`, and `select`; do not concatenate translated fragments.
+- Keep `en.json` complete and treat English as the fallback locale.
+- Add new locale files with the same key set as English.
+- Keep API errors machine-readable; map them to localized messages at the UI boundary.
+- Development defaults that are visible to users must also come from message keys.
+- After message changes, run TypeScript checks and verify at least one ICU plural branch.

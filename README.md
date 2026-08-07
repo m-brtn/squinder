@@ -30,6 +30,20 @@ make android
 Preparation and launch can also be combined, for example `make prep web`.
 Use `make down` to stop the API and database containers.
 
+### Physical iOS and Android devices
+
+SDK 57 requires a development client until its Expo Go build reaches the app
+stores. Sign in to EAS and create installable clients once:
+
+```sh
+pnpm exec eas login
+make build-dev
+```
+
+Install each build from the QR code or link printed by EAS. After that,
+`make ios` and `make android` start Metro in dev-client mode. Open the installed
+Squinder development client and scan the Metro QR code.
+
 The local API runs on port `3001` because port `3000` is already occupied in
 the current development environment. Railway supplies its own `PORT`.
 

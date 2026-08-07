@@ -2,14 +2,20 @@
   "expo": {
     "name": "Squinder",
     "slug": "squinder",
+    "scheme": "squinder",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.squinder.app",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.squinder.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -20,6 +26,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e982d17d-a160-431f-962e-5ce38f4123f4"
+      }
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-localization"
+    ]
   }
 }

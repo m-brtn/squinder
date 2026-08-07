@@ -11,6 +11,7 @@
     "start": "fastify start -l info -a 0.0.0.0 dist/app.js",
     "build": "tsc",
     "build:ts": "pnpm build",
+    "db:generate": "drizzle-kit generate",
     "typecheck": "tsc --noEmit",
     "watch:ts": "tsc -w",
     "dev": "pnpm build && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"pnpm:watch:ts\" \"pnpm:dev:start\"",

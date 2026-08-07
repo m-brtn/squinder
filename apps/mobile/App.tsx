@@ -1,9 +1,8 @@
-import Constants from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   SafeAreaView,
   StyleSheet,
@@ -11,139 +10,138 @@ import {
   View,
 } from 'react-native';
 
-type Health = {
-  status: 'ok';
-  version: string;
-  timestamp: string;
-};
-
-type SocketStatus = 'connecting' | 'connected' | 'disconnected';
-
-const expoHost = Constants.expoConfig?.hostUri?.split(':')[0];
-const localHost =
-  expoHost ?? (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
-const API_URL =
-  process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, '') ??
-  `http://${localHost}:3001`;
-const WS_URL = `${API_URL.replace(/^http/, 'ws')}/ws`;
+import {
+  createUser,
+  getCurrentUser,
+  type User,
+} from './src/api/client';
+import { I18nProvider } from './src/i18n/I18nProvider';
+import { HomeScreen } from './src/screens/HomeScreen';
+import { OnboardingScreen } from './src/screens/OnboardingScreen';
+import {
+  clearSessionToken,
+  getSessionToken,
+  saveSessionToken,
+} from './src/storage/session';
 
 export default function App() {
-  const [health, setHealth] = useState<Health | null>(null);
-  const [healthError, setHealthError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [socketStatus, setSocketStatus] =
-    useState<SocketStatus>('connecting');
-  const [lastPing, setLastPing] = useState<string | null>(null);
+  return (
+    <I18nProvider>
+      <AppContent />
+    </I18nProvider>
+  );
+}
 
-  const loadHealth = useCallback(async () => {
-    setLoading(true);
-    setHealthError(null);
+function AppContent() {
+  const { formatMessage } = useIntl();
+  const [user, setUser] = useState<User | null>(null);
+  const [restoring, setRestoring] = useState(true);
+  const [restoreError, setRestoreError] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
+
+  const restoreSession = useCallback(async () => {
+    setRestoring(true);
+    setRestoreError(false);
 
     try {
-      const response = await fetch(`${API_URL}/health`);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      const token = await getSessionToken();
+      if (!token) {
+        setUser(null);
+        return;
       }
-      setHealth((await response.json()) as Health);
+
+      const result = await getCurrentUser(token);
+      setUser(result.user);
     } catch (error) {
-      setHealth(null);
-      setHealthError(error instanceof Error ? error.message : 'Unknown error');
+      if (error instanceof Error && error.message === 'HTTP 401') {
+        await clearSessionToken();
+        setUser(null);
+      } else {
+        setRestoreError(true);
+      }
     } finally {
-      setLoading(false);
+      setRestoring(false);
     }
   }, []);
 
   useEffect(() => {
-    void loadHealth();
-  }, [loadHealth]);
+    void restoreSession();
+  }, [restoreSession]);
 
-  useEffect(() => {
-    let stopped = false;
-    let socket: WebSocket | undefined;
-    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+  const handleComplete = async (
+    input: Pick<User, 'name' | 'gender' | 'birthDate'>,
+  ) => {
+    setSubmitting(true);
+    setSubmitError(false);
+    try {
+      const result = await createUser(input);
+      await saveSessionToken(result.sessionToken);
+      setUser(result.user);
+    } catch {
+      setSubmitError(true);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-    const connect = () => {
-      setSocketStatus('connecting');
-      socket = new WebSocket(WS_URL);
+  const handleResetSession = async () => {
+    await clearSessionToken();
+    setUser(null);
+  };
 
-      socket.onopen = () => setSocketStatus('connected');
-      socket.onmessage = ({ data }) => {
-        try {
-          const message = JSON.parse(String(data)) as {
-            type?: string;
-            timestamp?: string;
-          };
-          if (message.type === 'ping' && message.timestamp) {
-            setLastPing(new Date(message.timestamp).toLocaleTimeString());
-          }
-        } catch {
-          // Ignore non-JSON service messages.
-        }
-      };
-      socket.onerror = () => setSocketStatus('disconnected');
-      socket.onclose = () => {
-        setSocketStatus('disconnected');
-        if (!stopped) {
-          reconnectTimer = setTimeout(connect, 3_000);
-        }
-      };
-    };
+  const content = (() => {
+    if (restoring) {
+      return (
+        <View style={styles.center}>
+          <ActivityIndicator color="#8b5cf6" size="large" />
+          <Text style={styles.muted}>
+            {formatMessage({ id: 'session.restoring' })}
+          </Text>
+        </View>
+      );
+    }
 
-    connect();
+    if (restoreError) {
+      return (
+        <View style={styles.center}>
+          <Text style={styles.errorTitle}>
+            {formatMessage({ id: 'errors.apiUnavailableTitle' })}
+          </Text>
+          <Text style={styles.muted}>
+            {formatMessage({ id: 'errors.apiUnavailable' })}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void restoreSession()}
+            style={styles.retryButton}
+          >
+            <Text style={styles.retryText}>
+              {formatMessage({ id: 'actions.retry' })}
+            </Text>
+          </Pressable>
+        </View>
+      );
+    }
 
-    return () => {
-      stopped = true;
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      socket?.close();
-    };
-  }, []);
+    if (user) {
+      return (
+        <HomeScreen user={user} onResetSession={handleResetSession} />
+      );
+    }
+
+    return (
+      <OnboardingScreen
+        error={submitError}
+        onComplete={handleComplete}
+        submitting={submitting}
+      />
+    );
+  })();
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.eyebrow}>SQUINDER</Text>
-        <Text style={styles.title}>Backend status</Text>
-
-        <View style={styles.card}>
-          <Text style={styles.label}>API</Text>
-          {loading ? (
-            <ActivityIndicator color="#7c3aed" />
-          ) : health ? (
-            <>
-              <Text style={styles.value}>Online</Text>
-              <Text style={styles.detail}>Version {health.version}</Text>
-            </>
-          ) : (
-            <>
-              <Text style={[styles.value, styles.error]}>Unavailable</Text>
-              <Text style={styles.detail}>{healthError}</Text>
-              <Pressable style={styles.button} onPress={loadHealth}>
-                <Text style={styles.buttonText}>Retry</Text>
-              </Pressable>
-            </>
-          )}
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.label}>WEBSOCKET</Text>
-          <View style={styles.statusRow}>
-            <View
-              style={[
-                styles.dot,
-                socketStatus === 'connected'
-                  ? styles.dotOnline
-                  : styles.dotOffline,
-              ]}
-            />
-            <Text style={styles.value}>{socketStatus}</Text>
-          </View>
-          <Text style={styles.detail}>
-            {lastPing ? `Last ping: ${lastPing}` : 'Waiting for first ping…'}
-          </Text>
-        </View>
-
-        <Text style={styles.endpoint}>{API_URL}</Text>
-      </View>
+      {content}
       <StatusBar style="light" />
     </SafeAreaView>
   );
@@ -154,83 +152,31 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0b1020',
   },
-  container: {
+  center: {
+    alignItems: 'center',
     flex: 1,
-    padding: 24,
-    justifyContent: 'center',
     gap: 16,
+    justifyContent: 'center',
+    padding: 24,
   },
-  eyebrow: {
-    color: '#a78bfa',
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 3,
-  },
-  title: {
-    color: '#f8fafc',
-    fontSize: 36,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  card: {
-    backgroundColor: '#151c31',
-    borderColor: '#26314f',
-    borderRadius: 20,
-    borderWidth: 1,
-    gap: 8,
-    padding: 22,
-  },
-  label: {
-    color: '#8b9bb8',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-  },
-  value: {
+  errorTitle: {
     color: '#f8fafc',
     fontSize: 22,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  detail: {
-    color: '#a9b5cb',
-    fontSize: 15,
-  },
-  error: {
-    color: '#fb7185',
-  },
-  statusRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 10,
-  },
-  dot: {
-    borderRadius: 6,
-    height: 12,
-    width: 12,
-  },
-  dotOnline: {
-    backgroundColor: '#34d399',
-  },
-  dotOffline: {
-    backgroundColor: '#f59e0b',
-  },
-  button: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#7c3aed',
-    borderRadius: 10,
-    marginTop: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  buttonText: {
-    color: '#ffffff',
     fontWeight: '700',
   },
-  endpoint: {
-    color: '#66738d',
-    fontSize: 12,
-    marginTop: 4,
+  muted: {
+    color: '#a9b5cb',
+    fontSize: 15,
     textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#7c3aed',
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+  },
+  retryText: {
+    color: '#ffffff',
+    fontWeight: '700',
   },
 });

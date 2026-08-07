@@ -8,5 +8,8 @@
     "dev:mobile": "pnpm --filter @squinder/mobile start",
     "build:api": "pnpm --filter @squinder/api build",
     "typecheck": "pnpm --recursive typecheck"
+  },
+  "devDependencies": {
+    "eas-cli": "^21.7.0"
   }
 }

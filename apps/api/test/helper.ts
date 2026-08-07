@@ -4,6 +4,7 @@ import * as test from 'node:test'
 const helper = require('fastify-cli/helper.js')
 
 process.env.DATABASE_URL ??= 'postgres://squinder:squinder@localhost:5432/squinder'
+process.env.NODE_ENV = 'test'
 
 export type TestContext = {
   after: typeof test.after

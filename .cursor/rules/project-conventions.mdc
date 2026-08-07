@@ -1,0 +1,39 @@
+---
+description: Squinder architecture, platform, dependency, and development conventions
+alwaysApply: true
+---
+
+# Squinder Project Conventions
+
+## Platform
+
+- Expo is web-first, while preserving iOS and Android support.
+- Keep UI and business logic compatible with `react-native-web`.
+- For native-only libraries, provide a web adapter or platform-specific file.
+- Telegram Mini App will reuse Expo Web; isolate Telegram SDK integration behind a web-only adapter.
+
+## Backend and data
+
+- Use Fastify on Node.js 22 and keep compatibility with Railway.
+- PostgreSQL 18 with pgvector is the primary database; access it through Drizzle ORM.
+- Add schema changes as Drizzle migrations and verify them against the Docker database.
+- Keep `/health`, WebSocket, and SSE operational when changing API infrastructure.
+- Store session tokens only as hashes in PostgreSQL.
+
+## Dependencies and scaffolding
+
+- Initialize frameworks with their official generators.
+- Prefer current package versions, but never override Expo SDK compatibility pins blindly.
+- After changing Expo dependencies, run `expo-doctor` and TypeScript checks.
+- Use Expo development builds for native SDK features; do not assume Expo Go compatibility.
+
+## Local workflow
+
+- Keep `make prep`, `make web`, `make ios`, and `make android` working.
+- API and PostgreSQL run in Docker; Expo and device tooling run on the host.
+- Verify user-facing flows on Expo Web in addition to static checks.
+
+## AI
+
+- Add Mastra agents only for genuinely agentic or model-driven flows.
+- Keep deterministic forms, validation, persistence, and authentication outside agents.
