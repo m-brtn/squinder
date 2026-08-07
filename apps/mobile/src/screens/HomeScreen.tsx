@@ -91,7 +91,7 @@ export function HomeScreen({ user, onOpenSwiper, onResetSession }: Props) {
   return (
     <VStack
       space="lg"
-      className="w-full max-w-xl flex-1 self-center justify-center p-6"
+      className="w-full max-w-xl flex-1 self-center justify-center bg-background p-6"
     >
       <HStack className="items-center justify-between">
         <Text

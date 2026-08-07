@@ -10,7 +10,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+} from 'react-native-safe-area-context';
 
 import {
   createUser,
@@ -40,11 +43,13 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (
-    <I18nProvider>
-      <ThemeProvider>
-        <ThemedApp />
-      </ThemeProvider>
-    </I18nProvider>
+    <SafeAreaProvider>
+      <I18nProvider>
+        <ThemeProvider>
+          <ThemedApp />
+        </ThemeProvider>
+      </I18nProvider>
+    </SafeAreaProvider>
   );
 }
 
