@@ -5,6 +5,8 @@ import { Center } from '@/components/ui/center';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -28,6 +30,13 @@ import {
   ThemeProvider,
   useTheme,
 } from './src/theme/ThemeProvider';
+
+type RootStackParamList = {
+  Home: undefined;
+  Swiper: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (
@@ -57,7 +66,6 @@ function AppContent() {
   const [restoreError, setRestoreError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(false);
-  const [screen, setScreen] = useState<'home' | 'swiper'>('home');
 
   const restoreSession = useCallback(async () => {
     setRestoring(true);
@@ -106,7 +114,6 @@ function AppContent() {
 
   const handleResetSession = async () => {
     await clearSessionToken();
-    setScreen('home');
     setUser(null);
   };
 
@@ -145,14 +152,9 @@ function AppContent() {
     }
 
     if (user) {
-      if (screen === 'swiper') {
-        return <SwiperScreen onBack={() => setScreen('home')} />;
-      }
-
       return (
-        <HomeScreen
+        <AuthenticatedNavigator
           user={user}
-          onOpenSwiper={() => setScreen('swiper')}
           onResetSession={handleResetSession}
         />
       );
@@ -172,5 +174,40 @@ function AppContent() {
       {content}
       <StatusBar style={isDark ? 'light' : 'dark'} />
     </SafeAreaView>
+  );
+}
+
+function AuthenticatedNavigator({
+  user,
+  onResetSession,
+}: {
+  user: User;
+  onResetSession: () => Promise<void>;
+}) {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        screenOptions={{
+          fullScreenGestureEnabled: true,
+          gestureEnabled: true,
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="Home">
+          {({ navigation }) => (
+            <HomeScreen
+              user={user}
+              onOpenSwiper={() => navigation.navigate('Swiper')}
+              onResetSession={onResetSession}
+            />
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="Swiper">
+          {({ navigation }) => (
+            <SwiperScreen onBack={() => navigation.goBack()} />
+          )}
+        </Stack.Screen>
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }

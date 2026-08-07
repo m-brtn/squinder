@@ -59,6 +59,15 @@
   iOS и Android. Development build сохранён как опция для будущих native-only
   модулей, которых нет в Expo Go.
 
+### 4. Нативная навигация
+
+- Подключены React Navigation и `react-native-screens`, совместимый с Expo SDK
+  56.
+- Ручной `screen` state заменён типизированным native stack `Home → Swiper`.
+- На iOS включены системный swipe-back и full-screen gesture.
+- На Android возврат обрабатывается системной кнопкой или жестом Back.
+- Экранная кнопка Back сохранена и вызывает тот же `navigation.goBack()`.
+
 ## Архитектурные решения
 
 - **Текущий Expo-клиент — mobile-only.** Целевые платформы: iOS и Android.
@@ -78,6 +87,8 @@
 - `expo export --platform ios` — iOS bundle успешно собран.
 - `expo export --platform android` — Android bundle успешно собран.
 - `expo start --go` — Metro успешно запускается в режиме Expo Go.
+- После подключения native stack повторно собраны iOS и Android bundles;
+  TypeScript и Expo Doctor 21/21 остались зелёными.
 
 ## Риски и открытые вопросы
 

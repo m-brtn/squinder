@@ -1,0 +1,16 @@
+---
+description: Require user control over app launches, services, builds, and runtime processes
+alwaysApply: true
+---
+
+# Manual Runtime Control
+
+- Never start or restart the application, Expo, Metro, simulators, emulators,
+  Docker services, API servers, databases, or other long-running processes.
+- Never run build, bundle, export, archive, native compile, or deployment
+  commands unless the user explicitly requests that exact action.
+- Never stop, kill, or otherwise manipulate processes started by the user.
+- After code changes, provide the exact command the user can run manually.
+- Ask the user for logs or screenshots when runtime verification is needed.
+- Static checks such as TypeScript, lint, and Expo Doctor are allowed unless
+  the user also asks not to run them.
