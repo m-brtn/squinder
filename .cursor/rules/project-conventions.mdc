@@ -7,10 +7,11 @@ alwaysApply: true
 
 ## Platform
 
-- Expo is web-first, while preserving iOS and Android support.
-- Keep UI and business logic compatible with `react-native-web`.
-- For native-only libraries, provide a web adapter or platform-specific file.
-- Telegram Mini App will reuse Expo Web; isolate Telegram SDK integration behind a web-only adapter.
+- Expo targets iOS and Android only; Expo Web is outside the current scope.
+- Keep the app compatible with Expo Go on Expo SDK 56.
+- Native-only libraries are allowed without a web adapter.
+- Do not spend implementation or verification time on web compatibility unless
+  the product scope explicitly changes again.
 
 ## Backend and data
 
@@ -25,13 +26,14 @@ alwaysApply: true
 - Initialize frameworks with their official generators.
 - Prefer current package versions, but never override Expo SDK compatibility pins blindly.
 - After changing Expo dependencies, run `expo-doctor` and TypeScript checks.
-- Use Expo development builds for native SDK features; do not assume Expo Go compatibility.
+- Prefer libraries included in Expo Go. Use development builds only when a
+  required native SDK is unavailable there.
 
 ## Local workflow
 
-- Keep `make prep`, `make web`, `make ios`, and `make android` working.
+- Keep `make prep`, `make ios`, and `make android` working.
 - API and PostgreSQL run in Docker; Expo and device tooling run on the host.
-- Verify user-facing flows on Expo Web in addition to static checks.
+- Verify user-facing flows on iOS or Android in addition to static checks.
 
 ## AI
 

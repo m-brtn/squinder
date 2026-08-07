@@ -1,14 +1,14 @@
+import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
+import '@/global.css';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Center } from '@/components/ui/center';
+import { Spinner } from '@/components/ui/spinner';
+import { Text } from '@/components/ui/text';
+import { VStack } from '@/components/ui/vstack';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
-import {
-  ActivityIndicator,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   createUser,
@@ -18,27 +18,46 @@ import {
 import { I18nProvider } from './src/i18n/I18nProvider';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
+import { SwiperScreen } from './src/screens/SwiperScreen';
 import {
   clearSessionToken,
   getSessionToken,
   saveSessionToken,
 } from './src/storage/session';
+import {
+  ThemeProvider,
+  useTheme,
+} from './src/theme/ThemeProvider';
 
 export default function App() {
   return (
     <I18nProvider>
-      <AppContent />
+      <ThemeProvider>
+        <ThemedApp />
+      </ThemeProvider>
     </I18nProvider>
+  );
+}
+
+function ThemedApp() {
+  const { mode } = useTheme();
+
+  return (
+    <GluestackUIProvider mode={mode}>
+      <AppContent />
+    </GluestackUIProvider>
   );
 }
 
 function AppContent() {
   const { formatMessage } = useIntl();
+  const { isDark } = useTheme();
   const [user, setUser] = useState<User | null>(null);
   const [restoring, setRestoring] = useState(true);
   const [restoreError, setRestoreError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(false);
+  const [screen, setScreen] = useState<'home' | 'swiper'>('home');
 
   const restoreSession = useCallback(async () => {
     setRestoring(true);
@@ -87,46 +106,55 @@ function AppContent() {
 
   const handleResetSession = async () => {
     await clearSessionToken();
+    setScreen('home');
     setUser(null);
   };
 
   const content = (() => {
     if (restoring) {
       return (
-        <View style={styles.center}>
-          <ActivityIndicator color="#8b5cf6" size="large" />
-          <Text style={styles.muted}>
-            {formatMessage({ id: 'session.restoring' })}
-          </Text>
-        </View>
+        <Center className="flex-1 p-6">
+          <VStack space="lg" className="items-center">
+            <Spinner className="text-primary" size="large" />
+            <Text className="text-center text-muted-foreground">
+              {formatMessage({ id: 'session.restoring' })}
+            </Text>
+          </VStack>
+        </Center>
       );
     }
 
     if (restoreError) {
       return (
-        <View style={styles.center}>
-          <Text style={styles.errorTitle}>
-            {formatMessage({ id: 'errors.apiUnavailableTitle' })}
-          </Text>
-          <Text style={styles.muted}>
-            {formatMessage({ id: 'errors.apiUnavailable' })}
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => void restoreSession()}
-            style={styles.retryButton}
-          >
-            <Text style={styles.retryText}>
-              {formatMessage({ id: 'actions.retry' })}
+        <Center className="flex-1 p-6">
+          <VStack space="lg" className="items-center">
+            <Text bold className="text-center text-foreground" size="xl">
+              {formatMessage({ id: 'errors.apiUnavailableTitle' })}
             </Text>
-          </Pressable>
-        </View>
+            <Text className="text-center text-muted-foreground">
+              {formatMessage({ id: 'errors.apiUnavailable' })}
+            </Text>
+            <Button onPress={() => void restoreSession()} size="lg">
+              <ButtonText>
+                {formatMessage({ id: 'actions.retry' })}
+              </ButtonText>
+            </Button>
+          </VStack>
+        </Center>
       );
     }
 
     if (user) {
+      if (screen === 'swiper') {
+        return <SwiperScreen onBack={() => setScreen('home')} />;
+      }
+
       return (
-        <HomeScreen user={user} onResetSession={handleResetSession} />
+        <HomeScreen
+          user={user}
+          onOpenSwiper={() => setScreen('swiper')}
+          onResetSession={handleResetSession}
+        />
       );
     }
 
@@ -140,43 +168,9 @@ function AppContent() {
   })();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView className="bg-background" style={{ flex: 1 }}>
       {content}
-      <StatusBar style="light" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#0b1020',
-  },
-  center: {
-    alignItems: 'center',
-    flex: 1,
-    gap: 16,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  errorTitle: {
-    color: '#f8fafc',
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  muted: {
-    color: '#a9b5cb',
-    fontSize: 15,
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#7c3aed',
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 13,
-  },
-  retryText: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-});

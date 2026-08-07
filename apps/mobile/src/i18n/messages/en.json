@@ -11,6 +11,7 @@
   "home.apiLabel": "API",
   "home.apiOnline": "Online",
   "home.apiVersion": "Version {version}",
+  "home.developmentStatus": "DEVELOPMENT STATUS",
   "home.greeting": "Hi, {name}",
   "home.lastPing": "Last ping: {time}",
   "home.profileCreated": "Your profile is ready and your session is saved.",
@@ -18,6 +19,7 @@
   "home.socketConnecting": "Connecting",
   "home.socketDisconnected": "Disconnected",
   "home.socketLabel": "WEBSOCKET",
+  "home.screens": "SCREENS",
   "home.waitingForPing": "Waiting for the first ping…",
   "onboarding.birthDate.day": "DAY",
   "onboarding.birthDate.month": "MONTH",
@@ -36,5 +38,9 @@
   "onboarding.name.title": "What's your name?",
   "onboarding.stepCounter": "STEP {current} OF {total}",
   "onboarding.stepsRemaining": "{count, plural, =0 {Ready to create your profile} one {# step left} other {# steps left}}",
-  "session.restoring": "Restoring your session…"
+  "session.restoring": "Restoring your session…",
+  "screens.open": "Open {screen}",
+  "screens.swiper.title": "Swiper",
+  "theme.switchToDark": "Use dark theme",
+  "theme.switchToLight": "Use light theme"
 }

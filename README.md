@@ -4,7 +4,7 @@ Monorepo with an Expo/React Native client and a Fastify realtime API.
 
 ## Stack
 
-- Expo 57 / React Native 0.86
+- Expo 56 / React Native 0.85
 - Fastify 5 on Node.js 22+
 - WebSocket (`/ws`) and Server-Sent Events (`/events`)
 - PostgreSQL 18 with pgvector
@@ -22,27 +22,26 @@ make prep
 Then start the desired Expo target together with the Docker backend:
 
 ```sh
-make web
 make ios
 make android
 ```
 
-Preparation and launch can also be combined, for example `make prep web`.
+Preparation and launch can also be combined, for example `make prep ios`.
 Use `make down` to stop the API and database containers.
 
 ### Physical iOS and Android devices
 
-SDK 57 requires a development client until its Expo Go build reaches the app
-stores. Sign in to EAS and create installable clients once:
+SDK 56 works with the current Expo Go app. Install Expo Go on the device, then
+run the matching target:
 
 ```sh
-pnpm exec eas login
-make build-dev
+make ios
+make android
 ```
 
-Install each build from the QR code or link printed by EAS. After that,
-`make ios` and `make android` start Metro in dev-client mode. Open the installed
-Squinder development client and scan the Metro QR code.
+Open Expo Go and scan the Metro QR code. Development builds remain available
+through `make build-dev` when a future feature requires a native module that is
+not bundled with Expo Go.
 
 The local API runs on port `3001` because port `3000` is already occupied in
 the current development environment. Railway supplies its own `PORT`.

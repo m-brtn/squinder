@@ -1,18 +1,37 @@
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
+import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+
+import { Box } from '@/components/ui/box';
 import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+  Button,
+  ButtonSpinner,
+  ButtonText,
+} from '@/components/ui/button';
+import {
+  FormControl,
+  FormControlError,
+  FormControlErrorIcon,
+  FormControlErrorText,
+  FormControlLabel,
+  FormControlLabelText,
+} from '@/components/ui/form-control';
+import { HStack } from '@/components/ui/hstack';
+import { AlertCircleIcon, CircleIcon } from '@/components/ui/icon';
+import { Input, InputField } from '@/components/ui/input';
+import { Progress, ProgressFilledTrack } from '@/components/ui/progress';
+import {
+  Radio,
+  RadioGroup,
+  RadioIcon,
+  RadioIndicator,
+  RadioLabel,
+} from '@/components/ui/radio';
+import { Text } from '@/components/ui/text';
+import { VStack } from '@/components/ui/vstack';
 
 import type { Gender, User } from '../api/client';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 type OnboardingInput = Pick<User, 'name' | 'gender' | 'birthDate'>;
 
@@ -89,346 +108,204 @@ export function OnboardingScreen({
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.screen}
+      className="flex-1 bg-background"
     >
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.brand}>
-          {formatMessage({ id: 'common.brand' })}
-        </Text>
-        <View style={styles.progress}>
-          {[0, 1, 2].map((item) => (
-            <View
-              key={item}
-              style={[styles.progressItem, item <= step && styles.progressActive]}
-            />
-          ))}
-        </View>
+        <VStack
+          space="2xl"
+          className="w-full max-w-xl flex-1 self-center justify-center p-6"
+        >
+          <HStack className="items-center justify-between">
+            <Text
+              bold
+              className="tracking-widest text-primary"
+              size="xs"
+            >
+              {formatMessage({ id: 'common.brand' })}
+            </Text>
+            <ThemeToggle />
+          </HStack>
 
-        <View style={styles.copy}>
-          <Text style={styles.step}>
-            {formatMessage(
+          <Progress
+            accessibilityLabel={formatMessage(
               { id: 'onboarding.stepCounter' },
               { current: step + 1, total: 3 },
-            )}{' '}
-            ·{' '}
-            {formatMessage(
-              { id: 'onboarding.stepsRemaining' },
-              { count: 2 - step },
             )}
-          </Text>
-          <Text style={styles.title}>
-            {formatMessage({ id: titleIds[step] })}
-          </Text>
-          <Text style={styles.subtitle}>
-            {formatMessage({ id: subtitles[step] })}
-          </Text>
-        </View>
-
-        <View style={styles.form}>
-          {step === 0 && (
-            <TextInput
-              autoCapitalize="words"
-              autoCorrect={false}
-              maxLength={80}
-              onChangeText={setName}
-              placeholder={formatMessage({
-                id: 'onboarding.name.placeholder',
-              })}
-              placeholderTextColor="#66738d"
-              selectionColor="#a78bfa"
-              style={styles.nameInput}
-              value={name}
-            />
-          )}
-
-          {step === 1 && (
-            <View style={styles.options}>
-              {genderOptions.map((option) => {
-                const selected = gender === option.value;
-                return (
-                  <Pressable
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected }}
-                    key={option.value}
-                    onPress={() => setGender(option.value)}
-                    style={[styles.option, selected && styles.optionSelected]}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        selected && styles.optionTextSelected,
-                      ]}
-                    >
-                      {formatMessage({ id: option.messageId })}
-                    </Text>
-                    <View
-                      style={[styles.radio, selected && styles.radioSelected]}
-                    />
-                  </Pressable>
-                );
-              })}
-            </View>
-          )}
-
-          {step === 2 && (
-            <View style={styles.dateRow}>
-              <View style={styles.dateField}>
-                <Text style={styles.dateLabel}>
-                  {formatMessage({ id: 'onboarding.birthDate.day' })}
-                </Text>
-                <TextInput
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  onChangeText={setDay}
-                  style={styles.dateInput}
-                  value={day}
-                />
-              </View>
-              <View style={styles.dateField}>
-                <Text style={styles.dateLabel}>
-                  {formatMessage({ id: 'onboarding.birthDate.month' })}
-                </Text>
-                <TextInput
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  onChangeText={setMonth}
-                  style={styles.dateInput}
-                  value={month}
-                />
-              </View>
-              <View style={[styles.dateField, styles.yearField]}>
-                <Text style={styles.dateLabel}>
-                  {formatMessage({ id: 'onboarding.birthDate.year' })}
-                </Text>
-                <TextInput
-                  keyboardType="number-pad"
-                  maxLength={4}
-                  onChangeText={setYear}
-                  style={styles.dateInput}
-                  value={year}
-                />
-              </View>
-            </View>
-          )}
-
-          {error && (
-            <Text style={styles.error}>
-              {formatMessage({ id: 'errors.createProfile' })}
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.actions}>
-          {step > 0 && (
-            <Pressable
-              accessibilityRole="button"
-              disabled={submitting}
-              onPress={() => setStep((current) => current - 1)}
-              style={styles.backButton}
-            >
-              <Text style={styles.backText}>
-                {formatMessage({ id: 'actions.back' })}
-              </Text>
-            </Pressable>
-          )}
-          <Pressable
-            accessibilityRole="button"
-            disabled={!canContinue || submitting}
-            onPress={() => void handleContinue()}
-            style={[
-              styles.continueButton,
-              (!canContinue || submitting) && styles.buttonDisabled,
-            ]}
+            className="h-1"
+            value={((step + 1) / 3) * 100}
           >
-            {submitting ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.continueText}>
+            <ProgressFilledTrack />
+          </Progress>
+
+          <VStack space="md">
+            <Text
+              bold
+              className="tracking-wider text-muted-foreground"
+              size="xs"
+            >
+              {formatMessage(
+                { id: 'onboarding.stepCounter' },
+                { current: step + 1, total: 3 },
+              )}{' '}
+              ·{' '}
+              {formatMessage(
+                { id: 'onboarding.stepsRemaining' },
+                { count: 2 - step },
+              )}
+            </Text>
+            <Text bold className="text-foreground" size="3xl">
+              {formatMessage({ id: titleIds[step] })}
+            </Text>
+            <Text className="leading-6 text-muted-foreground" size="md">
+              {formatMessage({ id: subtitles[step] })}
+            </Text>
+          </VStack>
+
+          <FormControl
+            className="min-h-56"
+            isInvalid={error}
+            isRequired
+          >
+            {step === 0 && (
+              <Input className="min-h-16 rounded-2xl bg-card px-5">
+                <InputField
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  className="text-2xl"
+                  maxLength={80}
+                  onChangeText={setName}
+                  placeholder={formatMessage({
+                    id: 'onboarding.name.placeholder',
+                  })}
+                  value={name}
+                />
+              </Input>
+            )}
+
+            {step === 1 && (
+              <RadioGroup
+                onChange={(value) => setGender(value as Gender)}
+                value={gender}
+              >
+                {genderOptions.map((option) => (
+                  <Radio
+                    className="min-h-14 justify-between rounded-2xl border border-border bg-card p-4 data-[checked=true]:border-primary data-[checked=true]:bg-accent"
+                    key={option.value}
+                    size="lg"
+                    value={option.value}
+                  >
+                    <RadioLabel>
+                      {formatMessage({ id: option.messageId })}
+                    </RadioLabel>
+                    <RadioIndicator>
+                      <RadioIcon as={CircleIcon} />
+                    </RadioIndicator>
+                  </Radio>
+                ))}
+              </RadioGroup>
+            )}
+
+            {step === 2 && (
+              <HStack space="sm">
+                <FormControl className="flex-1">
+                  <FormControlLabel>
+                    <FormControlLabelText className="text-xs">
+                      {formatMessage({ id: 'onboarding.birthDate.day' })}
+                    </FormControlLabelText>
+                  </FormControlLabel>
+                  <Input className="min-h-14 rounded-2xl bg-card">
+                    <InputField
+                      className="text-xl"
+                      keyboardType="number-pad"
+                      maxLength={2}
+                      onChangeText={setDay}
+                      textAlign="center"
+                      value={day}
+                    />
+                  </Input>
+                </FormControl>
+                <FormControl className="flex-1">
+                  <FormControlLabel>
+                    <FormControlLabelText className="text-xs">
+                      {formatMessage({ id: 'onboarding.birthDate.month' })}
+                    </FormControlLabelText>
+                  </FormControlLabel>
+                  <Input className="min-h-14 rounded-2xl bg-card">
+                    <InputField
+                      className="text-xl"
+                      keyboardType="number-pad"
+                      maxLength={2}
+                      onChangeText={setMonth}
+                      textAlign="center"
+                      value={month}
+                    />
+                  </Input>
+                </FormControl>
+                <FormControl className="flex-1">
+                  <FormControlLabel>
+                    <FormControlLabelText className="text-xs">
+                      {formatMessage({ id: 'onboarding.birthDate.year' })}
+                    </FormControlLabelText>
+                  </FormControlLabel>
+                  <Input className="min-h-14 rounded-2xl bg-card">
+                    <InputField
+                      className="text-xl"
+                      keyboardType="number-pad"
+                      maxLength={4}
+                      onChangeText={setYear}
+                      textAlign="center"
+                      value={year}
+                    />
+                  </Input>
+                </FormControl>
+              </HStack>
+            )}
+
+            {error && (
+              <FormControlError className="mt-4">
+                <FormControlErrorIcon as={AlertCircleIcon} />
+                <FormControlErrorText>
+                  {formatMessage({ id: 'errors.createProfile' })}
+                </FormControlErrorText>
+              </FormControlError>
+            )}
+          </FormControl>
+
+          <HStack space="md" className="items-center justify-end">
+            {step > 0 && (
+              <Button
+                isDisabled={submitting}
+                onPress={() => setStep((current) => current - 1)}
+                size="lg"
+                variant="ghost"
+              >
+                <ButtonText>
+                  {formatMessage({ id: 'actions.back' })}
+                </ButtonText>
+              </Button>
+            )}
+            <Button
+              className="min-w-40"
+              isDisabled={!canContinue || submitting}
+              onPress={() => void handleContinue()}
+              size="lg"
+            >
+              {submitting && <ButtonSpinner />}
+              <ButtonText>
                 {formatMessage({
                   id:
                     step === 2
                       ? 'actions.createProfile'
                       : 'actions.continue',
                 })}
-              </Text>
-            )}
-          </Pressable>
-        </View>
+              </ButtonText>
+            </Button>
+          </HStack>
+        </VStack>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: '#0b1020',
-    flex: 1,
-  },
-  content: {
-    alignSelf: 'center',
-    flexGrow: 1,
-    justifyContent: 'center',
-    maxWidth: 560,
-    padding: 24,
-    width: '100%',
-  },
-  brand: {
-    color: '#a78bfa',
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 3,
-    marginBottom: 20,
-  },
-  progress: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 44,
-  },
-  progressItem: {
-    backgroundColor: '#26314f',
-    borderRadius: 3,
-    flex: 1,
-    height: 5,
-  },
-  progressActive: {
-    backgroundColor: '#8b5cf6',
-  },
-  copy: {
-    marginBottom: 32,
-  },
-  step: {
-    color: '#8b9bb8',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    marginBottom: 12,
-  },
-  title: {
-    color: '#f8fafc',
-    fontSize: 36,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  subtitle: {
-    color: '#a9b5cb',
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  form: {
-    minHeight: 220,
-  },
-  nameInput: {
-    backgroundColor: '#151c31',
-    borderColor: '#364464',
-    borderRadius: 16,
-    borderWidth: 1,
-    color: '#f8fafc',
-    fontSize: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-  },
-  options: {
-    gap: 10,
-  },
-  option: {
-    alignItems: 'center',
-    backgroundColor: '#151c31',
-    borderColor: '#26314f',
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 18,
-  },
-  optionSelected: {
-    backgroundColor: '#241a42',
-    borderColor: '#8b5cf6',
-  },
-  optionText: {
-    color: '#c3cce0',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  optionTextSelected: {
-    color: '#ffffff',
-  },
-  radio: {
-    borderColor: '#66738d',
-    borderRadius: 10,
-    borderWidth: 2,
-    height: 20,
-    width: 20,
-  },
-  radioSelected: {
-    backgroundColor: '#8b5cf6',
-    borderColor: '#c4b5fd',
-    borderWidth: 4,
-  },
-  dateRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  dateField: {
-    flex: 1,
-    gap: 8,
-  },
-  yearField: {
-    flex: 1.35,
-  },
-  dateLabel: {
-    color: '#8b9bb8',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  dateInput: {
-    backgroundColor: '#151c31',
-    borderColor: '#364464',
-    borderRadius: 14,
-    borderWidth: 1,
-    color: '#f8fafc',
-    fontSize: 22,
-    paddingHorizontal: 14,
-    paddingVertical: 16,
-    textAlign: 'center',
-  },
-  error: {
-    color: '#fb7185',
-    marginTop: 16,
-  },
-  actions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'flex-end',
-    marginTop: 28,
-  },
-  backButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-  },
-  backText: {
-    color: '#a9b5cb',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  continueButton: {
-    alignItems: 'center',
-    backgroundColor: '#7c3aed',
-    borderRadius: 14,
-    minWidth: 160,
-    paddingHorizontal: 22,
-    paddingVertical: 16,
-  },
-  buttonDisabled: {
-    opacity: 0.45,
-  },
-  continueText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-});

@@ -1,3 +1,5 @@
+import '@formatjs/intl-pluralrules/polyfill-force.js';
+import '@formatjs/intl-pluralrules/locale-data/en.js';
 import { registerRootComponent } from 'expo';
 
 import App from './App';

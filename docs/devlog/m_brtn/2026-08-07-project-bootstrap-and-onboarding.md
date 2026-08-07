@@ -1,7 +1,7 @@
 # Squinder: bootstrap Expo/Fastify, realtime-инфраструктура и первый онбординг
 
 **Автор:** m_brtn  
-**Дата:** 2026-08-07, 20:54 EEST  
+**Дата:** 2026-08-07, 21:00 EEST
 **Ветка:** `main`  
 **Базовый коммит:** `a9dfe57` (`Init`)  
 **Связанные задачи:** без трекера, начальная разработка продукта
@@ -51,12 +51,21 @@
   1. имя;
   2. мужской / женский / небинарный / не указывать;
   3. дата рождения.
-- Dev-значения: `Алекс`, `male`, `1995-05-15`.
+- Dev-значения: `Alex`, `male`, `1995-05-15`.
 - `POST /users` создаёт пользователя и выдаёт 256-битный случайный session token.
 - В PostgreSQL сохраняется только SHA-256 hash токена.
 - `GET /me` восстанавливает пользователя по Bearer token.
 - Native хранит токен в Expo SecureStore, web — в localStorage через platform adapter.
 - После завершения показывается главный экран со статусом API и WebSocket; dev-сессию можно сбросить.
+
+### 6. i18n foundation
+
+- Добавлены `react-intl` и `expo-localization` с единым `I18nProvider`.
+- Английский стал первым и fallback-языком; сообщения хранятся в `apps/mobile/src/i18n/messages/en.json`.
+- Все пользовательские строки вынесены из TS/TSX в semantic message keys, включая placeholders, ошибки, статусы, кнопки и видимые dev-defaults.
+- ICU MessageFormat используется для interpolation, форматирования времени и plural-веток.
+- Добавлен реальный plural message для оставшихся шагов онбординга: отдельные варианты для 0, 1 и нескольких шагов.
+- Создано Cursor rule `.cursor/rules/i18n.mdc`, запрещающее hardcoded UI copy и конкатенацию переводимых фрагментов.
 
 ## Архитектурные решения
 
@@ -66,6 +75,8 @@
 - **PostgreSQL + pgvector вместо отдельной vector DB.** Транзакционные данные и embeddings остаются в одной системе; отдельный движок появится только при подтверждённой нагрузке.
 - **Mastra отложена до первого AI-flow.** Детерминированные формы, валидация, сессии и CRUD не должны зависеть от агента.
 - **Анонимная сессия — временный auth boundary.** Контракт уже отделён от UI, поэтому позже токен можно заменить Telegram auth, OAuth или полноценной учётной записью.
+- **ICU MessageFormat как контракт локализации.** Тексты хранятся в JSON, UI обращается к semantic keys через `react-intl`; plural/select/interpolation не собираются вручную.
+- **API не отвечает за локализованный copy.** Серверные ошибки остаются машиночитаемыми, а пользовательский текст выбирается на границе Expo UI.
 
 ## Проверка
 
@@ -76,6 +87,9 @@
 - pgvector 0.8.6 включён в локальной БД.
 - Реальными запросами проверены healthcheck, WebSocket, SSE, создание пользователя и `/me`.
 - В браузере пройден полный онбординг и подтверждено восстановление сессии после перезагрузки.
+- Expo Web повторно проверен после подключения `IntlProvider`: главный экран полностью отображается на английском.
+- ICU plural message отдельно прогнан для `count = 0`, `1` и `2`: получены три корректные английские формы.
+- Поиск по TS/TSX не нашёл оставшихся русских или напрямую захардкоженных пользовательских строк.
 
 ## Риски и открытые вопросы
 
@@ -92,12 +106,14 @@
 
 ## Основные изменённые файлы
 
-- `apps/mobile/App.tsx`, `apps/mobile/src/` — orchestration, onboarding, home, API client и session storage.
+- `apps/mobile/App.tsx`, `apps/mobile/src/` — orchestration, onboarding, home, API client, session storage и i18n provider.
+- `apps/mobile/src/i18n/messages/en.json` — полный английский message catalog с ICU plural.
 - `apps/api/src/routes/users.ts` — создание пользователя и восстановление сессии.
 - `apps/api/src/db/schema.ts`, `apps/api/drizzle/` — пользовательская схема и миграция.
 - `apps/api/src/plugins/database.ts` — типизированный Drizzle client и startup migrations.
 - `Makefile`, `compose.yaml`, `apps/api/Dockerfile`, `railway.json` — локальная и Railway-инфраструктура.
 - `.cursor/rules/project-conventions.mdc` — устойчивые правила проекта из этой сессии.
+- `.cursor/rules/i18n.mdc` — обязательные правила локализации Expo UI.
 
 ## Следующая сессия
 

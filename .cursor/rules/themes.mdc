@@ -1,0 +1,16 @@
+---
+description: Enforce semantic light and dark theme usage in Expo UI
+globs: apps/mobile/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Expo themes
+
+- Never hardcode UI colors in screens or components.
+- Read semantic colors from `useTheme()` and type style factories with `ThemeColors`.
+- Add new palette values to both light and dark themes with semantic names.
+- Do not name tokens after visual values such as `gray500` or `purple`; use roles such as `textMuted`, `surface`, or `accent`.
+- Keep the system color scheme as the default until a saved user preference exists.
+- Persist manual theme changes and keep web/native behavior equivalent.
+- Set status bar and native system background from the resolved theme.
+- Check contrast, disabled, selected, error, success, and focus states in both themes.

@@ -1,32 +1,36 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+
+import { Box } from '@/components/ui/box';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Divider } from '@/components/ui/divider';
+import { HStack } from '@/components/ui/hstack';
+import { ChevronRightIcon, Icon } from '@/components/ui/icon';
+import { Pressable } from '@/components/ui/pressable';
+import { Spinner } from '@/components/ui/spinner';
+import { Text } from '@/components/ui/text';
+import { VStack } from '@/components/ui/vstack';
 
 import {
+  API_URL,
   getHealth,
   type Health,
   type User,
   WS_URL,
-  API_URL,
 } from '../api/client';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 type SocketStatus = 'connecting' | 'connected' | 'disconnected';
 
 type Props = {
   user: User;
+  onOpenSwiper: () => void;
   onResetSession: () => Promise<void>;
 };
 
-export function HomeScreen({ user, onResetSession }: Props) {
+export function HomeScreen({ user, onOpenSwiper, onResetSession }: Props) {
   const { formatMessage, formatTime } = useIntl();
   const [health, setHealth] = useState<Health | null>(null);
-  const [healthError, setHealthError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [socketStatus, setSocketStatus] =
     useState<SocketStatus>('connecting');
@@ -34,12 +38,10 @@ export function HomeScreen({ user, onResetSession }: Props) {
 
   const loadHealth = useCallback(async () => {
     setLoading(true);
-    setHealthError(false);
     try {
       setHealth(await getHealth());
-    } catch (error) {
+    } catch {
       setHealth(null);
-      setHealthError(true);
     } finally {
       setLoading(false);
     }
@@ -87,196 +89,132 @@ export function HomeScreen({ user, onResetSession }: Props) {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.eyebrow}>
-        {formatMessage({ id: 'common.brand' })}
-      </Text>
-      <Text style={styles.title}>
+    <VStack
+      space="lg"
+      className="w-full max-w-xl flex-1 self-center justify-center p-6"
+    >
+      <HStack className="items-center justify-between">
+        <Text
+          bold
+          className="tracking-widest text-primary"
+          size="xs"
+        >
+          {formatMessage({ id: 'common.brand' })}
+        </Text>
+        <ThemeToggle />
+      </HStack>
+      <Text bold className="text-foreground" size="3xl">
         {formatMessage({ id: 'home.greeting' }, { name: user.name })}
       </Text>
-      <Text style={styles.subtitle}>
+      <Text className="text-muted-foreground" size="md">
         {formatMessage({ id: 'home.profileCreated' })}
       </Text>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>
-          {formatMessage({ id: 'home.apiLabel' })}
+      <VStack space="sm">
+        <Text
+          bold
+          className="tracking-wider text-muted-foreground"
+          size="2xs"
+        >
+          {formatMessage({ id: 'home.developmentStatus' })}
         </Text>
-        {loading ? (
-          <ActivityIndicator color="#7c3aed" />
-        ) : health ? (
-          <>
-            <Text style={styles.value}>
-              {formatMessage({ id: 'home.apiOnline' })}
+        <Box className="overflow-hidden rounded-2xl border border-border bg-card">
+          <HStack space="sm" className="min-h-12 items-center px-4">
+            <Box
+              className={`h-2 w-2 rounded-full ${
+                health ? 'bg-success' : 'bg-warning'
+              }`}
+            />
+            <Text bold className="text-card-foreground" size="xs">
+              {formatMessage({ id: 'home.apiLabel' })}
             </Text>
-            <Text style={styles.detail}>
-              {formatMessage(
-                { id: 'home.apiVersion' },
-                { version: health.version },
+            <Box className="ml-auto shrink">
+              {loading ? (
+                <Spinner className="text-primary" size="small" />
+              ) : health ? (
+                <Text className="text-muted-foreground" size="xs">
+                  {formatMessage(
+                    { id: 'home.apiVersion' },
+                    { version: health.version },
+                  )}
+                </Text>
+              ) : (
+                <Button onPress={loadHealth} size="sm" variant="link">
+                  <ButtonText>
+                    {formatMessage({ id: 'actions.retry' })}
+                  </ButtonText>
+                </Button>
               )}
+            </Box>
+          </HStack>
+          <Divider className="ml-9" />
+          <HStack space="sm" className="min-h-12 items-center px-4">
+            <Box
+              className={`h-2 w-2 rounded-full ${
+                socketStatus === 'connected' ? 'bg-success' : 'bg-warning'
+              }`}
+            />
+            <Text bold className="text-card-foreground" size="xs">
+              {formatMessage({ id: 'home.socketLabel' })}
             </Text>
-          </>
-        ) : (
-          <>
-            <Text style={[styles.value, styles.error]}>
-              {formatMessage({ id: 'errors.apiUnavailableTitle' })}
-            </Text>
-            {healthError && (
-              <Text style={styles.detail}>
-                {formatMessage({ id: 'errors.apiUnavailable' })}
-              </Text>
-            )}
-            <Pressable
-              accessibilityRole="button"
-              style={styles.retryButton}
-              onPress={loadHealth}
+            <Text
+              className="ml-auto shrink text-right text-muted-foreground"
+              size="xs"
             >
-              <Text style={styles.buttonText}>
-                {formatMessage({ id: 'actions.retry' })}
-              </Text>
-            </Pressable>
-          </>
-        )}
-      </View>
+              {lastPing
+                ? formatMessage(
+                    { id: 'home.lastPing' },
+                    { time: formatTime(lastPing) },
+                  )
+                : formatMessage({ id: 'home.waitingForPing' })}
+            </Text>
+          </HStack>
+        </Box>
+      </VStack>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>
-          {formatMessage({ id: 'home.socketLabel' })}
+      <VStack space="sm">
+        <Text
+          bold
+          className="tracking-wider text-muted-foreground"
+          size="2xs"
+        >
+          {formatMessage({ id: 'home.screens' })}
         </Text>
-        <View style={styles.statusRow}>
-          <View
-            style={[
-              styles.dot,
-              socketStatus === 'connected'
-                ? styles.dotOnline
-                : styles.dotOffline,
-            ]}
-          />
-          <Text style={styles.value}>
-            {formatMessage({
-              id:
-                socketStatus === 'connected'
-                  ? 'home.socketConnected'
-                  : socketStatus === 'connecting'
-                    ? 'home.socketConnecting'
-                    : 'home.socketDisconnected',
-            })}
+        <Pressable
+          accessibilityLabel={formatMessage(
+            { id: 'screens.open' },
+            { screen: formatMessage({ id: 'screens.swiper.title' }) },
+          )}
+          onPress={onOpenSwiper}
+          className="min-h-14 flex-row items-center rounded-2xl border border-border bg-card px-4 data-[hover=true]:border-primary data-[hover=true]:bg-accent data-[active=true]:border-primary data-[active=true]:bg-accent"
+        >
+          <Text
+            bold
+            className="flex-1 text-card-foreground"
+            size="md"
+          >
+            {formatMessage({ id: 'screens.swiper.title' })}
           </Text>
-        </View>
-        <Text style={styles.detail}>
-          {lastPing
-            ? formatMessage(
-                { id: 'home.lastPing' },
-                { time: formatTime(lastPing) },
-              )
-            : formatMessage({ id: 'home.waitingForPing' })}
-        </Text>
-      </View>
+          <Icon
+            as={ChevronRightIcon}
+            className="text-muted-foreground"
+            size="md"
+          />
+        </Pressable>
+      </VStack>
 
-      <Text style={styles.endpoint}>{API_URL}</Text>
-      <Pressable
-        accessibilityRole="button"
+      <Text className="text-center text-muted-foreground" size="xs">
+        {API_URL}
+      </Text>
+      <Button
         onPress={() => void onResetSession()}
+        size="sm"
+        variant="link"
       >
-        <Text style={styles.reset}>
+        <ButtonText>
           {formatMessage({ id: 'actions.resetDevSession' })}
-        </Text>
-      </Pressable>
-    </View>
+        </ButtonText>
+      </Button>
+    </VStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignSelf: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    maxWidth: 560,
-    padding: 24,
-    width: '100%',
-    gap: 16,
-  },
-  eyebrow: {
-    color: '#a78bfa',
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 3,
-  },
-  title: {
-    color: '#f8fafc',
-    fontSize: 36,
-    fontWeight: '700',
-  },
-  subtitle: {
-    color: '#a9b5cb',
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  card: {
-    backgroundColor: '#151c31',
-    borderColor: '#26314f',
-    borderRadius: 20,
-    borderWidth: 1,
-    gap: 8,
-    padding: 22,
-  },
-  label: {
-    color: '#8b9bb8',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-  },
-  value: {
-    color: '#f8fafc',
-    fontSize: 22,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  detail: {
-    color: '#a9b5cb',
-    fontSize: 15,
-  },
-  error: {
-    color: '#fb7185',
-  },
-  statusRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 10,
-  },
-  dot: {
-    borderRadius: 6,
-    height: 12,
-    width: 12,
-  },
-  dotOnline: {
-    backgroundColor: '#34d399',
-  },
-  dotOffline: {
-    backgroundColor: '#f59e0b',
-  },
-  retryButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#7c3aed',
-    borderRadius: 10,
-    marginTop: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  endpoint: {
-    color: '#66738d',
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  reset: {
-    color: '#8b9bb8',
-    fontSize: 13,
-    padding: 10,
-    textAlign: 'center',
-    textDecorationLine: 'underline',
-  },
-});

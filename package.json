@@ -11,5 +11,12 @@
   },
   "devDependencies": {
     "eas-cli": "^21.7.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@expo/dom-webview": "56.0.6",
+      "@expo/metro-config": "56.0.18",
+      "lightningcss": "1.30.1"
+    }
   }
 }
