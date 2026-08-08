@@ -162,7 +162,13 @@ export function HomeScreen({
               {lastPing
                 ? formatMessage(
                     { id: 'home.lastPing' },
-                    { time: formatTime(lastPing) },
+                    {
+                      time: formatTime(lastPing, {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      }),
+                    },
                   )
                 : formatMessage({ id: 'home.waitingForPing' })}
             </Text>
