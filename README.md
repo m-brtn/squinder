@@ -19,7 +19,14 @@ Prepare dependencies and Docker images once:
 make prep
 ```
 
-Then start the desired Expo target together with the Docker backend:
+After installing a development build, start Metro together with the Docker
+backend:
+
+```sh
+make dev
+```
+
+To open the installed development client on the default simulator or emulator:
 
 ```sh
 make ios
@@ -31,17 +38,19 @@ Use `make down` to stop the API and database containers.
 
 ### Physical iOS and Android devices
 
-SDK 56 works with the current Expo Go app. Install Expo Go on the device, then
-run the matching target:
+Expo Go from the iOS App Store does not currently support SDK 56. Install the
+development build on a connected device once:
 
 ```sh
-make ios
-make android
+cd apps/mobile
+pnpm exec expo run:ios --device
+# or
+pnpm exec expo run:android --device
 ```
 
-Open Expo Go and scan the Metro QR code. Development builds remain available
-through `make build-dev` when a future feature requires a native module that is
-not bundled with Expo Go.
+For subsequent sessions, run `make dev` from the repository root and open the
+installed Squinder app. Cloud development builds remain available through
+`make build-ios`, `make build-android`, and `make build-dev`.
 
 The local API runs on port `3001` because port `3000` is already occupied in
 the current development environment. Railway supplies its own `PORT`.

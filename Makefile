@@ -1,9 +1,10 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help prep backend web ios android build-dev build-ios build-android down logs
+.PHONY: help prep backend dev web ios android build-dev build-ios build-android down logs
 
 help:
 	@echo "make prep          Install dependencies and build Docker services"
+	@echo "make dev           Start backend and Metro for the dev client"
 	@echo "make web           Start backend and Expo Web"
 	@echo "make ios           Start backend and iOS dev client"
 	@echo "make android       Start backend and Android dev client"
@@ -22,6 +23,9 @@ prep:
 
 backend:
 	docker compose up -d postgres api
+
+dev: backend
+	pnpm --filter @squinder/mobile dev
 
 web: backend
 	EXPO_PUBLIC_API_URL=http://localhost:3001 pnpm --filter @squinder/mobile web

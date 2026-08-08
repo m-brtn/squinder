@@ -1,0 +1,26 @@
+---
+description: Reuse shared UI tokens, constants, and components instead of duplicating them
+globs: apps/mobile/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Shared UI and DRY
+
+- Do not duplicate the same UI color, magic value, configuration object, or
+  non-trivial JSX pattern across screens.
+- Keep colors as semantic design tokens in `apps/mobile/global.css`; never create
+  screen-local color constants or repeat raw RGB, hex, or palette-based values.
+- Put reusable gluestack primitives and variants in
+  `apps/mobile/components/ui/`.
+- Put reusable product-level compositions in `apps/mobile/src/components/`.
+- Put shared non-visual values and typed configuration in
+  `apps/mobile/src/constants/`, grouped by domain rather than in one catch-all
+  file.
+- Keep feature-specific values colocated until a second real usage appears.
+  Extract on demonstrated reuse; do not create speculative abstractions.
+- Prefer a shared component with explicit typed props over copied JSX with
+  slightly different class names.
+- Extend an existing semantic token or component when its meaning matches.
+  Create a new abstraction only when the role or behavior is genuinely distinct.
+- When touching duplicated code, consolidate it within the task scope unless
+  doing so would require an unrelated refactor.

@@ -1,5 +1,6 @@
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import '@/global.css';
+import { Box } from '@/components/ui/box';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Center } from '@/components/ui/center';
 import { Spinner } from '@/components/ui/spinner';
@@ -11,16 +12,15 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import {
-  SafeAreaProvider,
-  SafeAreaView,
-} from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import {
   createUser,
   getCurrentUser,
   type User,
 } from './src/api/client';
+import { ScreenFrame } from './src/components/ScreenFrame';
+import { preloadSwiperImages } from './src/constants/swiperProfiles';
 import { I18nProvider } from './src/i18n/I18nProvider';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
@@ -106,6 +106,12 @@ function AppContent() {
     void restoreSession();
   }, [restoreSession]);
 
+  useEffect(() => {
+    if (user) {
+      void preloadSwiperImages();
+    }
+  }, [user]);
+
   const handleComplete = async (
     input: Pick<User, 'name' | 'gender' | 'birthDate'>,
   ) => {
@@ -180,10 +186,14 @@ function AppContent() {
   })();
 
   return (
-    <SafeAreaView className="bg-background" style={{ flex: 1 }}>
-      {content}
+    <Box className="flex-1 bg-background">
+      {!restoring && !restoreError && user ? (
+        content
+      ) : (
+        <ScreenFrame>{content}</ScreenFrame>
+      )}
       <StatusBar style={isDark ? 'light' : 'dark'} />
-    </SafeAreaView>
+    </Box>
   );
 }
 
@@ -205,14 +215,16 @@ function AuthenticatedNavigator({
       >
         <Stack.Screen name="Home">
           {({ navigation }) => (
-            <HomeScreen
-              user={user}
-              onOpenThemeSettings={() =>
-                navigation.navigate('ThemeSettings')
-              }
-              onOpenSwiper={() => navigation.navigate('Swiper')}
-              onResetSession={onResetSession}
-            />
+            <ScreenFrame>
+              <HomeScreen
+                user={user}
+                onOpenThemeSettings={() =>
+                  navigation.navigate('ThemeSettings')
+                }
+                onOpenSwiper={() => navigation.navigate('Swiper')}
+                onResetSession={onResetSession}
+              />
+            </ScreenFrame>
           )}
         </Stack.Screen>
         <Stack.Screen
@@ -220,12 +232,19 @@ function AuthenticatedNavigator({
           options={{ fullScreenGestureEnabled: false, gestureEnabled: false }}
         >
           {({ navigation }) => (
-            <SwiperScreen onBack={() => navigation.goBack()} />
+            <ScreenFrame>
+              <SwiperScreen
+                onBack={() => navigation.goBack()}
+                onOpenMenu={() => navigation.navigate('ThemeSettings')}
+              />
+            </ScreenFrame>
           )}
         </Stack.Screen>
         <Stack.Screen name="ThemeSettings">
           {({ navigation }) => (
-            <ThemeSettingsScreen onBack={() => navigation.goBack()} />
+            <ScreenFrame>
+              <ThemeSettingsScreen onBack={() => navigation.goBack()} />
+            </ScreenFrame>
           )}
         </Stack.Screen>
       </Stack.Navigator>

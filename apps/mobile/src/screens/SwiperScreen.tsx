@@ -1,12 +1,11 @@
 import {
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useState,
 } from 'react';
 import { useIntl } from 'react-intl';
-import { Image, ImageBackground, useWindowDimensions } from 'react-native';
+import { ImageBackground, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Extrapolation,
@@ -19,92 +18,47 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Box } from '@/components/ui/box';
-import { Button, ButtonIcon } from '@/components/ui/button';
+import { Button, ButtonIcon, ButtonText } from '@/components/ui/button';
 import { HStack } from '@/components/ui/hstack';
 import {
-  ChevronLeftIcon,
   CloseIcon,
   FavouriteIcon,
   InfoIcon,
+  MenuIcon,
   MessageCircleIcon,
+  RepeatIcon,
+  SearchIcon,
   StarIcon,
   Icon,
 } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 
+import { swiperProfiles } from '../constants/swiperProfiles';
+
 type Props = {
   onBack: () => void;
+  onOpenMenu: () => void;
 };
 
 type SwipeDirection = 'left' | 'right' | 'up';
 
-type Profile = {
-  id: string;
-  nameMessageId: string;
-  age: number;
-  distance: number;
-  bioMessageId: string;
-  imageUrl: string;
-};
-
-const profiles: readonly Profile[] = [
-  {
-    id: 'maya',
-    nameMessageId: 'swiper.profiles.maya.name',
-    age: 26,
-    distance: 2,
-    bioMessageId: 'swiper.profiles.maya.bio',
-    imageUrl:
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=85',
-  },
-  {
-    id: 'emma',
-    nameMessageId: 'swiper.profiles.emma.name',
-    age: 27,
-    distance: 5,
-    bioMessageId: 'swiper.profiles.emma.bio',
-    imageUrl:
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=85',
-  },
-  {
-    id: 'sofia',
-    nameMessageId: 'swiper.profiles.sofia.name',
-    age: 25,
-    distance: 8,
-    bioMessageId: 'swiper.profiles.sofia.bio',
-    imageUrl:
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=85',
-  },
-  {
-    id: 'lina',
-    nameMessageId: 'swiper.profiles.lina.name',
-    age: 24,
-    distance: 11,
-    bioMessageId: 'swiper.profiles.lina.bio',
-    imageUrl:
-      'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=1200&q=85',
-  },
-];
-
 const AnimatedBox = Animated.createAnimatedComponent(Box);
+const AnimatedImageBackground =
+  Animated.createAnimatedComponent(ImageBackground);
 const SWIPE_THRESHOLD = 100;
+const IMAGE_FADE_DURATION = 400;
 
-export function SwiperScreen({ onBack }: Props) {
+export function SwiperScreen({ onBack, onOpenMenu }: Props) {
   const { formatMessage } = useIntl();
   const { width } = useWindowDimensions();
   const [profileIndex, setProfileIndex] = useState(0);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
-  const profile = profiles[profileIndex % profiles.length];
-  const nextProfile = profiles[(profileIndex + 1) % profiles.length];
-
-  useEffect(() => {
-    void Promise.allSettled(
-      profiles.map(({ imageUrl }) => Image.prefetch(imageUrl)),
-    );
-  }, []);
+  const profile = swiperProfiles[profileIndex % swiperProfiles.length];
+  const nextProfile =
+    swiperProfiles[(profileIndex + 1) % swiperProfiles.length];
 
   useLayoutEffect(() => {
     translateX.value = 0;
@@ -113,6 +67,10 @@ export function SwiperScreen({ onBack }: Props) {
 
   const advanceProfile = useCallback(() => {
     setProfileIndex((current) => current + 1);
+  }, []);
+
+  const undoLastSwipe = useCallback(() => {
+    setProfileIndex((current) => Math.max(0, current - 1));
   }, []);
 
   const animateSwipe = useCallback(
@@ -210,15 +168,7 @@ export function SwiperScreen({ onBack }: Props) {
 
   return (
     <Box className="w-full max-w-3xl flex-1 self-center bg-background px-3 pb-3 pt-2">
-      <HStack space="md" className="items-center">
-        <Button
-          accessibilityLabel={formatMessage({ id: 'actions.back' })}
-          onPress={onBack}
-          size="icon"
-          variant="ghost"
-        >
-          <ButtonIcon as={ChevronLeftIcon} />
-        </Button>
+      <HStack space="sm" className="items-center px-1">
         <Text
           bold
           className="flex-1 text-foreground"
@@ -227,9 +177,26 @@ export function SwiperScreen({ onBack }: Props) {
         >
           {formatMessage({ id: 'screens.swiper.title' })}
         </Text>
+        <Button
+          accessibilityLabel={formatMessage({ id: 'swiper.actions.undo' })}
+          isDisabled={profileIndex === 0}
+          onPress={undoLastSwipe}
+          size="icon"
+          variant="ghost"
+        >
+          <ButtonIcon as={RepeatIcon} className="h-7 w-7" />
+        </Button>
+        <Button
+          accessibilityLabel={formatMessage({ id: 'swiper.actions.menu' })}
+          onPress={onOpenMenu}
+          size="icon"
+          variant="ghost"
+        >
+          <ButtonIcon as={MenuIcon} className="h-7 w-7" />
+        </Button>
       </HStack>
 
-      <Box className="relative mt-2 min-h-96 flex-1">
+      <Box className="relative mt-3 min-h-96 flex-1">
         <GestureDetector gesture={panGesture}>
           <Box className="absolute inset-0">
           {[nextProfile, profile].map((visibleProfile, index) => {
@@ -309,7 +276,74 @@ export function SwiperScreen({ onBack }: Props) {
           </Button>
         </HStack>
       </Box>
+
+      <HStack className="items-end justify-around pt-4">
+        <NavItem
+          icon={InfoIcon}
+          label={formatMessage({ id: 'swiper.nav.profile' })}
+          onPress={onBack}
+        />
+        <NavItem
+          active
+          icon={StarIcon}
+          label={formatMessage({ id: 'swiper.nav.forYou' })}
+        />
+        <NavItem
+          disabled
+          icon={SearchIcon}
+          label={formatMessage({ id: 'swiper.nav.people' })}
+        />
+        <NavItem
+          disabled
+          icon={FavouriteIcon}
+          label={formatMessage({ id: 'swiper.nav.likedYou' })}
+        />
+        <NavItem
+          disabled
+          icon={MessageCircleIcon}
+          label={formatMessage({ id: 'swiper.nav.chats' })}
+        />
+      </HStack>
     </Box>
+  );
+}
+
+type NavItemProps = {
+  readonly active?: boolean;
+  readonly disabled?: boolean;
+  readonly icon: typeof InfoIcon;
+  readonly label: string;
+  readonly onPress?: () => void;
+};
+
+function NavItem({
+  active = false,
+  disabled = false,
+  icon,
+  label,
+  onPress,
+}: NavItemProps) {
+  return (
+    <Button
+      accessibilityLabel={label}
+      className="h-auto min-w-14 flex-col px-1 py-1"
+      isDisabled={disabled}
+      onPress={onPress}
+      size="sm"
+      variant="ghost"
+    >
+      <ButtonIcon
+        as={icon}
+        className={
+          active ? 'h-6 w-6 text-primary' : 'h-6 w-6 text-muted-foreground'
+        }
+      />
+      <ButtonText
+        className={active ? 'text-primary' : 'text-muted-foreground'}
+      >
+        {label}
+      </ButtonText>
+    </Button>
   );
 }
 
@@ -329,17 +363,26 @@ function ProfileCard({
   name,
 }: ProfileCardProps) {
   const { formatMessage } = useIntl();
+  const imageOpacity = useSharedValue(0);
+  const imageStyle = useAnimatedStyle(() => ({
+    opacity: imageOpacity.value,
+  }));
+
+  const revealImage = useCallback(() => {
+    imageOpacity.value = withTiming(1, { duration: IMAGE_FADE_DURATION });
+  }, [imageOpacity]);
 
   return (
     <Box className="absolute inset-0 overflow-hidden rounded-3xl bg-card">
-      <ImageBackground
+      <AnimatedImageBackground
         accessibilityLabel={formatMessage(
           { id: 'swiper.profilePhoto' },
           { name },
         )}
+        onLoad={revealImage}
         resizeMode="cover"
         source={{ uri: imageUrl }}
-        style={{ flex: 1, justifyContent: 'flex-end' }}
+        style={[{ flex: 1, justifyContent: 'flex-end' }, imageStyle]}
       >
         <Box className="bg-scrim/65 px-5 pb-24 pt-6">
           <VStack space="sm">
@@ -384,7 +427,7 @@ function ProfileCard({
             </HStack>
           </VStack>
         </Box>
-      </ImageBackground>
+      </AnimatedImageBackground>
     </Box>
   );
 }
