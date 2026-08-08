@@ -10,6 +10,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   SafeAreaProvider,
   SafeAreaView,
@@ -43,13 +44,15 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <I18nProvider>
-        <ThemeProvider>
-          <ThemedApp />
-        </ThemeProvider>
-      </I18nProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <I18nProvider>
+          <ThemeProvider>
+            <ThemedApp />
+          </ThemeProvider>
+        </I18nProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -207,7 +210,10 @@ function AuthenticatedNavigator({
             />
           )}
         </Stack.Screen>
-        <Stack.Screen name="Swiper">
+        <Stack.Screen
+          name="Swiper"
+          options={{ fullScreenGestureEnabled: false, gestureEnabled: false }}
+        >
           {({ navigation }) => (
             <SwiperScreen onBack={() => navigation.goBack()} />
           )}
