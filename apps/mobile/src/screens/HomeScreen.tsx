@@ -18,17 +18,22 @@ import {
   type User,
   WS_URL,
 } from '../api/client';
-import { ThemeToggle } from '../components/ThemeToggle';
 
 type SocketStatus = 'connecting' | 'connected' | 'disconnected';
 
 type Props = {
   user: User;
+  onOpenThemeSettings: () => void;
   onOpenSwiper: () => void;
   onResetSession: () => Promise<void>;
 };
 
-export function HomeScreen({ user, onOpenSwiper, onResetSession }: Props) {
+export function HomeScreen({
+  user,
+  onOpenThemeSettings,
+  onOpenSwiper,
+  onResetSession,
+}: Props) {
   const { formatMessage, formatTime } = useIntl();
   const [health, setHealth] = useState<Health | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,16 +98,9 @@ export function HomeScreen({ user, onOpenSwiper, onResetSession }: Props) {
       space="lg"
       className="w-full max-w-xl flex-1 self-center justify-center bg-background p-6"
     >
-      <HStack className="items-center justify-between">
-        <Text
-          bold
-          className="tracking-widest text-primary"
-          size="xs"
-        >
-          {formatMessage({ id: 'common.brand' })}
-        </Text>
-        <ThemeToggle />
-      </HStack>
+      <Text bold className="tracking-widest text-primary" size="xs">
+        {formatMessage({ id: 'common.brand' })}
+      </Text>
       <Text bold className="text-foreground" size="3xl">
         {formatMessage({ id: 'home.greeting' }, { name: user.name })}
       </Text>
@@ -194,6 +192,27 @@ export function HomeScreen({ user, onOpenSwiper, onResetSession }: Props) {
             size="md"
           >
             {formatMessage({ id: 'screens.swiper.title' })}
+          </Text>
+          <Icon
+            as={ChevronRightIcon}
+            className="text-muted-foreground"
+            size="md"
+          />
+        </Pressable>
+        <Pressable
+          accessibilityLabel={formatMessage(
+            { id: 'screens.open' },
+            { screen: formatMessage({ id: 'screens.theme.title' }) },
+          )}
+          onPress={onOpenThemeSettings}
+          className="min-h-14 flex-row items-center rounded-2xl border border-border bg-card px-4 data-[hover=true]:border-primary data-[hover=true]:bg-accent data-[active=true]:border-primary data-[active=true]:bg-accent"
+        >
+          <Text
+            bold
+            className="flex-1 text-card-foreground"
+            size="md"
+          >
+            {formatMessage({ id: 'screens.theme.title' })}
           </Text>
           <Icon
             as={ChevronRightIcon}

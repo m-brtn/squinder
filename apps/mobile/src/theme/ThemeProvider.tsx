@@ -3,6 +3,7 @@ import * as SystemUI from 'expo-system-ui';
 import {
   createContext,
   type ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -11,11 +12,13 @@ import {
 import { Platform, useColorScheme } from 'react-native';
 
 type ThemeMode = 'light' | 'dark';
+export type ThemePreference = 'system' | ThemeMode;
 
 type ThemeContextValue = {
   isDark: boolean;
   mode: ThemeMode;
-  toggleTheme: () => void;
+  preference: ThemePreference;
+  setPreference: (preference: ThemePreference) => void;
 };
 
 const THEME_STORAGE_KEY = 'squinder.theme';
@@ -27,14 +30,23 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme();
-  const [preference, setPreference] = useState<ThemeMode | null>(null);
+  const [preference, setPreferenceState] =
+    useState<ThemePreference>('system');
   const mode: ThemeMode =
-    preference ?? (systemScheme === 'dark' ? 'dark' : 'light');
+    preference === 'system'
+      ? systemScheme === 'dark'
+        ? 'dark'
+        : 'light'
+      : preference;
 
   useEffect(() => {
     void AsyncStorage.getItem(THEME_STORAGE_KEY).then((storedMode) => {
-      if (storedMode === 'light' || storedMode === 'dark') {
-        setPreference(storedMode);
+      if (
+        storedMode === 'system' ||
+        storedMode === 'light' ||
+        storedMode === 'dark'
+      ) {
+        setPreferenceState(storedMode);
       }
     });
   }, []);
@@ -45,17 +57,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [mode]);
 
+  const setPreference = useCallback((nextPreference: ThemePreference) => {
+    setPreferenceState(nextPreference);
+    void AsyncStorage.setItem(THEME_STORAGE_KEY, nextPreference);
+  }, []);
+
   const value = useMemo<ThemeContextValue>(
     () => ({
       isDark: mode === 'dark',
       mode,
-      toggleTheme: () => {
-        const nextMode = mode === 'dark' ? 'light' : 'dark';
-        setPreference(nextMode);
-        void AsyncStorage.setItem(THEME_STORAGE_KEY, nextMode);
-      },
+      preference,
+      setPreference,
     }),
-    [mode],
+    [mode, preference, setPreference],
   );
 
   return (

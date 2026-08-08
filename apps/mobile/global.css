@@ -31,6 +31,7 @@
     --accent-foreground: 23 21 36;
     --success: 5 150 105;
     --warning: 217 119 6;
+    --scrim: 0 0 0;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -130,4 +131,5 @@
   --color-accent-foreground: rgb(var(--accent-foreground));
   --color-success: rgb(var(--success));
   --color-warning: rgb(var(--warning));
+  --color-scrim: rgb(var(--scrim));
 }

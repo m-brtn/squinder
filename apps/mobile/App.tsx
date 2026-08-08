@@ -25,6 +25,7 @@ import { I18nProvider } from './src/i18n/I18nProvider';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { SwiperScreen } from './src/screens/SwiperScreen';
+import { ThemeSettingsScreen } from './src/screens/ThemeSettingsScreen';
 import {
   clearSessionToken,
   getSessionToken,
@@ -38,6 +39,7 @@ import {
 type RootStackParamList = {
   Home: undefined;
   Swiper: undefined;
+  ThemeSettings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -57,10 +59,10 @@ export default function App() {
 }
 
 function ThemedApp() {
-  const { mode } = useTheme();
+  const { preference } = useTheme();
 
   return (
-    <GluestackUIProvider mode={mode}>
+    <GluestackUIProvider mode={preference}>
       <AppContent />
     </GluestackUIProvider>
   );
@@ -205,6 +207,9 @@ function AuthenticatedNavigator({
           {({ navigation }) => (
             <HomeScreen
               user={user}
+              onOpenThemeSettings={() =>
+                navigation.navigate('ThemeSettings')
+              }
               onOpenSwiper={() => navigation.navigate('Swiper')}
               onResetSession={onResetSession}
             />
@@ -216,6 +221,11 @@ function AuthenticatedNavigator({
         >
           {({ navigation }) => (
             <SwiperScreen onBack={() => navigation.goBack()} />
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="ThemeSettings">
+          {({ navigation }) => (
+            <ThemeSettingsScreen onBack={() => navigation.goBack()} />
           )}
         </Stack.Screen>
       </Stack.Navigator>

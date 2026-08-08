@@ -41,11 +41,13 @@
   "session.restoring": "Restoring your session…",
   "screens.open": "Open {screen}",
   "screens.swiper.title": "Squinder",
+  "screens.theme.title": "Appearance",
   "swiper.actions.like": "Like profile",
   "swiper.actions.pass": "Pass profile",
   "swiper.actions.superLike": "Super Like profile",
   "swiper.distance": "{distance, plural, one {# km away} other {# km away}}",
   "swiper.likeStamp": "LIKE",
+  "swiper.newHere": "New here",
   "swiper.nopeStamp": "NOPE",
   "swiper.profilePhoto": "Photo of {name}",
   "swiper.profiles.emma.bio": "Designer by day, amateur chef by night.",
@@ -56,6 +58,11 @@
   "swiper.profiles.maya.name": "Maya",
   "swiper.profiles.sofia.bio": "Always planning the next hike or gallery visit.",
   "swiper.profiles.sofia.name": "Sofia",
-  "theme.switchToDark": "Use dark theme",
-  "theme.switchToLight": "Use light theme"
+  "theme.description": "Choose how Squinder looks on this device.",
+  "theme.options.dark.description": "Always use the dark appearance.",
+  "theme.options.dark.label": "Dark",
+  "theme.options.light.description": "Always use the light appearance.",
+  "theme.options.light.label": "Light",
+  "theme.options.system.description": "Follow your device appearance settings.",
+  "theme.options.system.label": "System"
 }

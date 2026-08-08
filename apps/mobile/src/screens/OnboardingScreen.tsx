@@ -31,7 +31,6 @@ import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 
 import type { Gender, User } from '../api/client';
-import { ThemeToggle } from '../components/ThemeToggle';
 
 type OnboardingInput = Pick<User, 'name' | 'gender' | 'birthDate'>;
 
@@ -118,16 +117,9 @@ export function OnboardingScreen({
           space="2xl"
           className="w-full max-w-xl flex-1 self-center justify-center p-6"
         >
-          <HStack className="items-center justify-between">
-            <Text
-              bold
-              className="tracking-widest text-primary"
-              size="xs"
-            >
-              {formatMessage({ id: 'common.brand' })}
-            </Text>
-            <ThemeToggle />
-          </HStack>
+          <Text bold className="tracking-widest text-primary" size="xs">
+            {formatMessage({ id: 'common.brand' })}
+          </Text>
 
           <Progress
             accessibilityLabel={formatMessage(

@@ -25,12 +25,13 @@ import {
   ChevronLeftIcon,
   CloseIcon,
   FavouriteIcon,
+  InfoIcon,
+  MessageCircleIcon,
   StarIcon,
+  Icon,
 } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
-
-import { ThemeToggle } from '../components/ThemeToggle';
 
 type Props = {
   onBack: () => void;
@@ -208,13 +209,13 @@ export function SwiperScreen({ onBack }: Props) {
   }));
 
   return (
-    <Box className="w-full max-w-3xl flex-1 self-center bg-background px-4 pb-4 pt-3">
+    <Box className="w-full max-w-3xl flex-1 self-center bg-background px-3 pb-3 pt-2">
       <HStack space="md" className="items-center">
         <Button
           accessibilityLabel={formatMessage({ id: 'actions.back' })}
           onPress={onBack}
           size="icon"
-          variant="outline"
+          variant="ghost"
         >
           <ButtonIcon as={ChevronLeftIcon} />
         </Button>
@@ -222,22 +223,22 @@ export function SwiperScreen({ onBack }: Props) {
           bold
           className="flex-1 text-foreground"
           numberOfLines={1}
-          size="xl"
+          size="3xl"
         >
           {formatMessage({ id: 'screens.swiper.title' })}
         </Text>
-        <ThemeToggle />
       </HStack>
 
-      <GestureDetector gesture={panGesture}>
-        <Box className="relative my-4 min-h-96 flex-1">
+      <Box className="relative mt-2 min-h-96 flex-1">
+        <GestureDetector gesture={panGesture}>
+          <Box className="absolute inset-0">
           {[nextProfile, profile].map((visibleProfile, index) => {
             const isActive = index === 1;
 
             return (
               <AnimatedBox
                 key={visibleProfile.id}
-                className="absolute inset-0 overflow-hidden rounded-3xl bg-card shadow-hard-5"
+                className="absolute inset-0 overflow-hidden rounded-3xl bg-card shadow-hard-4"
                 style={isActive ? cardStyle : undefined}
               >
                 <ProfileCard
@@ -272,41 +273,42 @@ export function SwiperScreen({ onBack }: Props) {
               </AnimatedBox>
             );
           })}
-        </Box>
-      </GestureDetector>
+          </Box>
+        </GestureDetector>
 
-      <HStack space="xl" className="items-center justify-center pb-2">
-        <Button
-          accessibilityLabel={formatMessage({ id: 'swiper.actions.pass' })}
-          className="h-14 w-14 rounded-full border-destructive bg-card shadow-hard-2"
-          onPress={() => animateSwipe('left')}
-          size="icon"
-          variant="outline"
+        <HStack
+          space="lg"
+          className="absolute inset-x-0 bottom-5 z-10 items-center justify-center"
         >
-          <ButtonIcon as={CloseIcon} className="h-7 w-7 text-destructive" />
-        </Button>
-        <Button
-          accessibilityLabel={formatMessage({ id: 'swiper.actions.superLike' })}
-          className="h-12 w-12 rounded-full border-primary bg-card shadow-hard-2"
-          onPress={() => animateSwipe('up')}
-          size="icon"
-          variant="outline"
-        >
-          <ButtonIcon as={StarIcon} className="h-6 w-6 text-primary" />
-        </Button>
-        <Button
-          accessibilityLabel={formatMessage({ id: 'swiper.actions.like' })}
-          className="h-14 w-14 rounded-full border-success bg-card shadow-hard-2"
-          onPress={() => animateSwipe('right')}
-          size="icon"
-          variant="outline"
-        >
-          <ButtonIcon
-            as={FavouriteIcon}
-            className="h-7 w-7 text-success"
-          />
-        </Button>
-      </HStack>
+          <Button
+            accessibilityLabel={formatMessage({ id: 'swiper.actions.pass' })}
+            className="h-16 w-16 rounded-full border-0 bg-background/90 shadow-hard-4"
+            onPress={() => animateSwipe('left')}
+            size="icon"
+            variant="outline"
+          >
+            <ButtonIcon as={CloseIcon} className="h-8 w-8 text-destructive" />
+          </Button>
+          <Button
+            accessibilityLabel={formatMessage({
+              id: 'swiper.actions.superLike',
+            })}
+            className="h-14 w-14 rounded-full border-0 bg-primary shadow-hard-4"
+            onPress={() => animateSwipe('up')}
+            size="icon"
+          >
+            <ButtonIcon as={StarIcon} className="h-7 w-7" />
+          </Button>
+          <Button
+            accessibilityLabel={formatMessage({ id: 'swiper.actions.like' })}
+            className="h-16 w-16 rounded-full border-0 bg-success shadow-hard-4"
+            onPress={() => animateSwipe('right')}
+            size="icon"
+          >
+            <ButtonIcon as={FavouriteIcon} className="h-8 w-8" />
+          </Button>
+        </HStack>
+      </Box>
     </Box>
   );
 }
@@ -329,7 +331,7 @@ function ProfileCard({
   const { formatMessage } = useIntl();
 
   return (
-    <Box className="absolute inset-0 overflow-hidden rounded-3xl border border-border bg-card">
+    <Box className="absolute inset-0 overflow-hidden rounded-3xl bg-card">
       <ImageBackground
         accessibilityLabel={formatMessage(
           { id: 'swiper.profilePhoto' },
@@ -339,25 +341,47 @@ function ProfileCard({
         source={{ uri: imageUrl }}
         style={{ flex: 1, justifyContent: 'flex-end' }}
       >
-        <Box className="bg-background/90 p-5">
+        <Box className="bg-scrim/65 px-5 pb-24 pt-6">
           <VStack space="sm">
+            <Box className="self-start rounded-full bg-primary px-3 py-1">
+              <Text bold className="text-primary-foreground" size="xs">
+                {formatMessage({ id: 'swiper.newHere' })}
+              </Text>
+            </Box>
             <HStack space="sm" className="items-end">
-              <Text bold className="text-foreground" size="3xl">
+              <Text bold className="text-primary-foreground" size="4xl">
                 {name}
               </Text>
-              <Text className="pb-0.5 text-foreground" size="2xl">
+              <Text className="pb-0.5 text-primary-foreground" size="3xl">
                 {age}
               </Text>
             </HStack>
-            <Text className="text-muted-foreground" size="sm">
-              {formatMessage(
-                { id: 'swiper.distance' },
-                { distance },
-              )}
-            </Text>
-            <Text className="text-foreground" numberOfLines={2}>
-              {bio}
-            </Text>
+            <HStack space="sm" className="items-center">
+              <Icon
+                as={MessageCircleIcon}
+                className="text-primary-foreground"
+                size="md"
+              />
+              <Text
+                className="flex-1 text-primary-foreground"
+                numberOfLines={1}
+              >
+                {bio}
+              </Text>
+            </HStack>
+            <HStack space="sm" className="items-center">
+              <Icon
+                as={InfoIcon}
+                className="text-primary-foreground"
+                size="md"
+              />
+              <Text className="text-primary-foreground" size="sm">
+                {formatMessage(
+                  { id: 'swiper.distance' },
+                  { distance },
+                )}
+              </Text>
+            </HStack>
           </VStack>
         </Box>
       </ImageBackground>
