@@ -8,6 +8,13 @@
       "when": 1786124902734,
       "tag": "0000_gray_inertia",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786200609032,
+      "tag": "0001_premium_arachne",
+      "breakpoints": true
     }
   ]
 }

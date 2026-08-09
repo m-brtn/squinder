@@ -22,9 +22,17 @@ type ThemeContextValue = {
 };
 
 const THEME_STORAGE_KEY = 'squinder.theme';
-const SYSTEM_BACKGROUND = {
-  dark: '#0b1020',
-  light: '#f7f7fb',
+export const nativeThemeColors = {
+  dark: {
+    background: '#0b1020',
+    mutedForeground: '#a9b5cb',
+    primary: '#7c3aed',
+  },
+  light: {
+    background: '#f7f7fb',
+    mutedForeground: '#5f687b',
+    primary: '#6d28d9',
+  },
 } as const;
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
@@ -53,7 +61,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
-      void SystemUI.setBackgroundColorAsync(SYSTEM_BACKGROUND[mode]);
+      void SystemUI.setBackgroundColorAsync(nativeThemeColors[mode].background);
     }
   }, [mode]);
 

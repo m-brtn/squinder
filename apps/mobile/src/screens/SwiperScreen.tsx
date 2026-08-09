@@ -4,6 +4,10 @@ import {
   useMemo,
   useState,
 } from 'react';
+import {
+  ArrowCounterClockwiseIcon,
+  ListIcon,
+} from 'phosphor-react-native';
 import { useIntl } from 'react-intl';
 import { ImageBackground, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -18,26 +22,23 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Box } from '@/components/ui/box';
-import { Button, ButtonIcon, ButtonText } from '@/components/ui/button';
+import { Button, ButtonIcon } from '@/components/ui/button';
 import { HStack } from '@/components/ui/hstack';
 import {
   CloseIcon,
   FavouriteIcon,
   InfoIcon,
-  MenuIcon,
   MessageCircleIcon,
-  RepeatIcon,
-  SearchIcon,
   StarIcon,
   Icon,
 } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 
+import { createPhosphorIcon } from '../components/PhosphorIcon';
 import { swiperProfiles } from '../constants/swiperProfiles';
 
 type Props = {
-  onBack: () => void;
   onOpenMenu: () => void;
 };
 
@@ -48,8 +49,14 @@ const AnimatedImageBackground =
   Animated.createAnimatedComponent(ImageBackground);
 const SWIPE_THRESHOLD = 100;
 const IMAGE_FADE_DURATION = 400;
+const UndoBoldIcon = createPhosphorIcon(
+  ArrowCounterClockwiseIcon,
+  'bold',
+  28,
+);
+const MenuBoldIcon = createPhosphorIcon(ListIcon, 'bold', 28);
 
-export function SwiperScreen({ onBack, onOpenMenu }: Props) {
+export function SwiperScreen({ onOpenMenu }: Props) {
   const { formatMessage } = useIntl();
   const { width } = useWindowDimensions();
   const [profileIndex, setProfileIndex] = useState(0);
@@ -167,7 +174,7 @@ export function SwiperScreen({ onBack, onOpenMenu }: Props) {
   }));
 
   return (
-    <Box className="w-full max-w-3xl flex-1 self-center bg-background px-3 pb-3 pt-2">
+    <Box className="w-full max-w-3xl flex-1 self-center bg-background px-3 pb-4 pt-2">
       <HStack space="sm" className="items-center px-1">
         <Text
           bold
@@ -184,7 +191,7 @@ export function SwiperScreen({ onBack, onOpenMenu }: Props) {
           size="icon"
           variant="ghost"
         >
-          <ButtonIcon as={RepeatIcon} className="h-7 w-7" />
+          <ButtonIcon as={UndoBoldIcon} className="h-7 w-7" />
         </Button>
         <Button
           accessibilityLabel={formatMessage({ id: 'swiper.actions.menu' })}
@@ -192,7 +199,7 @@ export function SwiperScreen({ onBack, onOpenMenu }: Props) {
           size="icon"
           variant="ghost"
         >
-          <ButtonIcon as={MenuIcon} className="h-7 w-7" />
+          <ButtonIcon as={MenuBoldIcon} className="h-7 w-7" />
         </Button>
       </HStack>
 
@@ -277,73 +284,7 @@ export function SwiperScreen({ onBack, onOpenMenu }: Props) {
         </HStack>
       </Box>
 
-      <HStack className="items-end justify-around pt-4">
-        <NavItem
-          icon={InfoIcon}
-          label={formatMessage({ id: 'swiper.nav.profile' })}
-          onPress={onBack}
-        />
-        <NavItem
-          active
-          icon={StarIcon}
-          label={formatMessage({ id: 'swiper.nav.forYou' })}
-        />
-        <NavItem
-          disabled
-          icon={SearchIcon}
-          label={formatMessage({ id: 'swiper.nav.people' })}
-        />
-        <NavItem
-          disabled
-          icon={FavouriteIcon}
-          label={formatMessage({ id: 'swiper.nav.likedYou' })}
-        />
-        <NavItem
-          disabled
-          icon={MessageCircleIcon}
-          label={formatMessage({ id: 'swiper.nav.chats' })}
-        />
-      </HStack>
     </Box>
-  );
-}
-
-type NavItemProps = {
-  readonly active?: boolean;
-  readonly disabled?: boolean;
-  readonly icon: typeof InfoIcon;
-  readonly label: string;
-  readonly onPress?: () => void;
-};
-
-function NavItem({
-  active = false,
-  disabled = false,
-  icon,
-  label,
-  onPress,
-}: NavItemProps) {
-  return (
-    <Button
-      accessibilityLabel={label}
-      className="h-auto min-w-14 flex-col px-1 py-1"
-      isDisabled={disabled}
-      onPress={onPress}
-      size="sm"
-      variant="ghost"
-    >
-      <ButtonIcon
-        as={icon}
-        className={
-          active ? 'h-6 w-6 text-primary' : 'h-6 w-6 text-muted-foreground'
-        }
-      />
-      <ButtonText
-        className={active ? 'text-primary' : 'text-muted-foreground'}
-      >
-        {label}
-      </ButtonText>
-    </Button>
   );
 }
 

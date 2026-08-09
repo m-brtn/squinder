@@ -7,10 +7,13 @@ export type Gender =
   | 'non_binary'
   | 'prefer_not_to_say';
 
+export type LookingFor = 'male' | 'female' | 'everyone';
+
 export type User = {
   id: string;
   name: string;
   gender: Gender;
+  lookingFor: LookingFor;
   birthDate: string;
   createdAt: string;
 };
@@ -53,7 +56,7 @@ const request = async <T>(
 export const getHealth = (): Promise<Health> => request('/health');
 
 export const createUser = (
-  input: Pick<User, 'name' | 'gender' | 'birthDate'>,
+  input: Pick<User, 'name' | 'gender' | 'lookingFor' | 'birthDate'>,
 ): Promise<{ user: User; sessionToken: string }> =>
   request('/users', {
     method: 'POST',

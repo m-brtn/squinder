@@ -1,9 +1,7 @@
 import { useIntl } from 'react-intl';
 
 import { Box } from '@/components/ui/box';
-import { Button, ButtonIcon } from '@/components/ui/button';
-import { HStack } from '@/components/ui/hstack';
-import { ChevronLeftIcon, CircleIcon } from '@/components/ui/icon';
+import { CircleIcon } from '@/components/ui/icon';
 import {
   Radio,
   RadioGroup,
@@ -18,10 +16,6 @@ import {
   type ThemePreference,
   useTheme,
 } from '../theme/ThemeProvider';
-
-type Props = {
-  readonly onBack: () => void;
-};
 
 const themeOptions: ReadonlyArray<{
   value: ThemePreference;
@@ -45,25 +39,15 @@ const themeOptions: ReadonlyArray<{
   },
 ];
 
-export function ThemeSettingsScreen({ onBack }: Props) {
+export function ThemeSettingsScreen() {
   const { formatMessage } = useIntl();
   const { preference, setPreference } = useTheme();
 
   return (
     <Box className="w-full max-w-3xl flex-1 self-center bg-background px-4 pb-4 pt-3">
-      <HStack space="md" className="items-center">
-        <Button
-          accessibilityLabel={formatMessage({ id: 'actions.back' })}
-          onPress={onBack}
-          size="icon"
-          variant="outline"
-        >
-          <ButtonIcon as={ChevronLeftIcon} />
-        </Button>
-        <Text bold className="flex-1 text-foreground" size="xl">
-          {formatMessage({ id: 'screens.theme.title' })}
-        </Text>
-      </HStack>
+      <Text bold className="text-foreground" size="xl">
+        {formatMessage({ id: 'screens.theme.title' })}
+      </Text>
 
       <VStack space="lg" className="pt-8">
         <Text className="text-muted-foreground">

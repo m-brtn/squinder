@@ -6,10 +6,12 @@ import { type FastifyPluginAsync } from 'fastify'
 import { users } from '../db/schema'
 
 type Gender = 'male' | 'female' | 'non_binary' | 'prefer_not_to_say'
+type LookingFor = 'male' | 'female' | 'everyone'
 
 interface CreateUserBody {
   name: string
   gender: Gender
+  lookingFor: LookingFor
   birthDate: string
 }
 
@@ -19,6 +21,7 @@ const genders: Gender[] = [
   'non_binary',
   'prefer_not_to_say'
 ]
+const lookingForOptions: LookingFor[] = ['male', 'female', 'everyone']
 
 const hashToken = (token: string): string =>
   createHash('sha256').update(token).digest('hex')
@@ -36,6 +39,7 @@ const userSelection = {
   id: users.id,
   name: users.name,
   gender: users.gender,
+  lookingFor: users.lookingFor,
   birthDate: users.birthDate,
   createdAt: users.createdAt
 }
@@ -46,10 +50,11 @@ const userRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
       body: {
         type: 'object',
         additionalProperties: false,
-        required: ['name', 'gender', 'birthDate'],
+        required: ['name', 'gender', 'lookingFor', 'birthDate'],
         properties: {
           name: { type: 'string', minLength: 2, maxLength: 80 },
           gender: { type: 'string', enum: genders },
+          lookingFor: { type: 'string', enum: lookingForOptions },
           birthDate: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' }
         }
       }
@@ -66,6 +71,7 @@ const userRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
       .values({
         name,
         gender: request.body.gender,
+        lookingFor: request.body.lookingFor,
         birthDate: request.body.birthDate,
         sessionTokenHash: hashToken(sessionToken)
       })

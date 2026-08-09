@@ -30,9 +30,12 @@ import {
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 
-import type { Gender, User } from '../api/client';
+import type { Gender, LookingFor, User } from '../api/client';
 
-type OnboardingInput = Pick<User, 'name' | 'gender' | 'birthDate'>;
+type OnboardingInput = Pick<
+  User,
+  'name' | 'gender' | 'lookingFor' | 'birthDate'
+>;
 
 type Props = {
   error: boolean;
@@ -50,16 +53,60 @@ const genderOptions: Array<{ value: Gender; messageId: string }> = [
   },
 ];
 
+const lookingForOptions: Array<{
+  value: LookingFor;
+  messageId: string;
+}> = [
+  { value: 'male', messageId: 'onboarding.lookingFor.male' },
+  { value: 'female', messageId: 'onboarding.lookingFor.female' },
+  { value: 'everyone', messageId: 'onboarding.lookingFor.everyone' },
+];
+
 const titleIds = [
   'onboarding.name.title',
   'onboarding.gender.title',
+  'onboarding.lookingFor.title',
   'onboarding.birthDate.title',
 ];
 const subtitles = [
   'onboarding.name.subtitle',
   'onboarding.gender.subtitle',
+  'onboarding.lookingFor.subtitle',
   'onboarding.birthDate.subtitle',
 ];
+const totalSteps = titleIds.length;
+
+type ChoiceRadioGroupProps = {
+  onChange: (value: string) => void;
+  options: Array<{ value: string; messageId: string }>;
+  value: string;
+};
+
+function ChoiceRadioGroup({
+  onChange,
+  options,
+  value,
+}: ChoiceRadioGroupProps) {
+  const { formatMessage } = useIntl();
+
+  return (
+    <RadioGroup onChange={onChange} value={value}>
+      {options.map((option) => (
+        <Radio
+          className="min-h-14 justify-between rounded-2xl border border-border bg-card p-4 data-[checked=true]:border-primary data-[checked=true]:bg-accent"
+          key={option.value}
+          size="lg"
+          value={option.value}
+        >
+          <RadioLabel>{formatMessage({ id: option.messageId })}</RadioLabel>
+          <RadioIndicator>
+            <RadioIcon as={CircleIcon} />
+          </RadioIndicator>
+        </Radio>
+      ))}
+    </RadioGroup>
+  );
+}
 
 export function OnboardingScreen({
   error,
@@ -72,6 +119,7 @@ export function OnboardingScreen({
     formatMessage({ id: 'onboarding.name.devDefault' }),
   );
   const [gender, setGender] = useState<Gender>('male');
+  const [lookingFor, setLookingFor] = useState<LookingFor>('everyone');
   const [day, setDay] = useState('15');
   const [month, setMonth] = useState('05');
   const [year, setYear] = useState('1995');
@@ -88,11 +136,15 @@ export function OnboardingScreen({
   }, [birthDate]);
 
   const canContinue =
-    step === 0 ? name.trim().length >= 2 : step === 1 ? true : dateIsValid;
+    step === 0
+      ? name.trim().length >= 2
+      : step === totalSteps - 1
+        ? dateIsValid
+        : true;
 
   const handleContinue = async () => {
     if (!canContinue || submitting) return;
-    if (step < 2) {
+    if (step < totalSteps - 1) {
       setStep((current) => current + 1);
       return;
     }
@@ -100,6 +152,7 @@ export function OnboardingScreen({
     await onComplete({
       name: name.trim(),
       gender,
+      lookingFor,
       birthDate,
     });
   };
@@ -124,10 +177,10 @@ export function OnboardingScreen({
           <Progress
             accessibilityLabel={formatMessage(
               { id: 'onboarding.stepCounter' },
-              { current: step + 1, total: 3 },
+              { current: step + 1, total: totalSteps },
             )}
             className="h-1"
-            value={((step + 1) / 3) * 100}
+            value={((step + 1) / totalSteps) * 100}
           >
             <ProgressFilledTrack />
           </Progress>
@@ -140,12 +193,12 @@ export function OnboardingScreen({
             >
               {formatMessage(
                 { id: 'onboarding.stepCounter' },
-                { current: step + 1, total: 3 },
+                { current: step + 1, total: totalSteps },
               )}{' '}
               ·{' '}
               {formatMessage(
                 { id: 'onboarding.stepsRemaining' },
-                { count: 2 - step },
+                { count: totalSteps - step - 1 },
               )}
             </Text>
             <Text bold className="text-foreground" size="3xl">
@@ -178,29 +231,22 @@ export function OnboardingScreen({
             )}
 
             {step === 1 && (
-              <RadioGroup
+              <ChoiceRadioGroup
                 onChange={(value) => setGender(value as Gender)}
+                options={genderOptions}
                 value={gender}
-              >
-                {genderOptions.map((option) => (
-                  <Radio
-                    className="min-h-14 justify-between rounded-2xl border border-border bg-card p-4 data-[checked=true]:border-primary data-[checked=true]:bg-accent"
-                    key={option.value}
-                    size="lg"
-                    value={option.value}
-                  >
-                    <RadioLabel>
-                      {formatMessage({ id: option.messageId })}
-                    </RadioLabel>
-                    <RadioIndicator>
-                      <RadioIcon as={CircleIcon} />
-                    </RadioIndicator>
-                  </Radio>
-                ))}
-              </RadioGroup>
+              />
             )}
 
             {step === 2 && (
+              <ChoiceRadioGroup
+                onChange={(value) => setLookingFor(value as LookingFor)}
+                options={lookingForOptions}
+                value={lookingFor}
+              />
+            )}
+
+            {step === 3 && (
               <HStack space="sm">
                 <FormControl className="flex-1">
                   <FormControlLabel>
@@ -289,7 +335,7 @@ export function OnboardingScreen({
               <ButtonText>
                 {formatMessage({
                   id:
-                    step === 2
+                    step === totalSteps - 1
                       ? 'actions.createProfile'
                       : 'actions.continue',
                 })}

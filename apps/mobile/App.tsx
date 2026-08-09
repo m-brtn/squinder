@@ -6,8 +6,8 @@ import { Center } from '@/components/ui/center';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -19,6 +19,7 @@ import {
   getCurrentUser,
   type User,
 } from './src/api/client';
+import { BottomNavBar } from './src/components/BottomNavBar';
 import { ScreenFrame } from './src/components/ScreenFrame';
 import { preloadSwiperImages } from './src/constants/swiperProfiles';
 import { I18nProvider } from './src/i18n/I18nProvider';
@@ -36,13 +37,13 @@ import {
   useTheme,
 } from './src/theme/ThemeProvider';
 
-type RootStackParamList = {
+type RootTabParamList = {
   Home: undefined;
   Swiper: undefined;
   ThemeSettings: undefined;
 };
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<RootTabParamList>();
 
 export default function App() {
   return (
@@ -113,7 +114,7 @@ function AppContent() {
   }, [user]);
 
   const handleComplete = async (
-    input: Pick<User, 'name' | 'gender' | 'birthDate'>,
+    input: Pick<User, 'name' | 'gender' | 'lookingFor' | 'birthDate'>,
   ) => {
     setSubmitting(true);
     setSubmitError(false);
@@ -206,16 +207,15 @@ function AuthenticatedNavigator({
 }) {
   return (
     <NavigationContainer>
-      <Stack.Navigator
+      <Tab.Navigator
+        tabBar={(props) => <BottomNavBar {...props} />}
         screenOptions={{
-          fullScreenGestureEnabled: true,
-          gestureEnabled: true,
           headerShown: false,
         }}
       >
-        <Stack.Screen name="Home">
+        <Tab.Screen name="Home">
           {({ navigation }) => (
-            <ScreenFrame>
+            <ScreenFrame edges={['top', 'left', 'right']}>
               <HomeScreen
                 user={user}
                 onOpenThemeSettings={() =>
@@ -226,28 +226,24 @@ function AuthenticatedNavigator({
               />
             </ScreenFrame>
           )}
-        </Stack.Screen>
-        <Stack.Screen
-          name="Swiper"
-          options={{ fullScreenGestureEnabled: false, gestureEnabled: false }}
-        >
+        </Tab.Screen>
+        <Tab.Screen name="Swiper">
           {({ navigation }) => (
-            <ScreenFrame>
+            <ScreenFrame edges={['top', 'left', 'right']}>
               <SwiperScreen
-                onBack={() => navigation.goBack()}
                 onOpenMenu={() => navigation.navigate('ThemeSettings')}
               />
             </ScreenFrame>
           )}
-        </Stack.Screen>
-        <Stack.Screen name="ThemeSettings">
-          {({ navigation }) => (
-            <ScreenFrame>
-              <ThemeSettingsScreen onBack={() => navigation.goBack()} />
+        </Tab.Screen>
+        <Tab.Screen name="ThemeSettings">
+          {() => (
+            <ScreenFrame edges={['top', 'left', 'right']}>
+              <ThemeSettingsScreen />
             </ScreenFrame>
           )}
-        </Stack.Screen>
-      </Stack.Navigator>
+        </Tab.Screen>
+      </Tab.Navigator>
     </NavigationContainer>
   );
 }
