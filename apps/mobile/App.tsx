@@ -6,10 +6,14 @@ import { Center } from '@/components/ui/center';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
+import { createNativeBottomTabNavigator } from '@react-navigation/bottom-tabs/unstable';
+import {
+  DarkTheme,
+  DefaultTheme,
+  NavigationContainer,
+} from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -19,7 +23,6 @@ import {
   getCurrentUser,
   type User,
 } from './src/api/client';
-import { BottomNavBar } from './src/components/BottomNavBar';
 import { ScreenFrame } from './src/components/ScreenFrame';
 import { preloadSwiperImages } from './src/constants/swiperProfiles';
 import { I18nProvider } from './src/i18n/I18nProvider';
@@ -34,6 +37,7 @@ import {
 } from './src/storage/session';
 import {
   ThemeProvider,
+  nativeThemeColors,
   useTheme,
 } from './src/theme/ThemeProvider';
 
@@ -43,7 +47,13 @@ type RootTabParamList = {
   ThemeSettings: undefined;
 };
 
-const Tab = createBottomTabNavigator<RootTabParamList>();
+const Tab = createNativeBottomTabNavigator<RootTabParamList>();
+
+const tabIcons = {
+  Home: require('./assets/tab-home.png'),
+  Swiper: require('./assets/tab-squinder.png'),
+  ThemeSettings: require('./assets/tab-settings.png'),
+} as const;
 
 export default function App() {
   return (
@@ -205,15 +215,42 @@ function AuthenticatedNavigator({
   user: User;
   onResetSession: () => Promise<void>;
 }) {
+  const { formatMessage } = useIntl();
+  const { mode } = useTheme();
+  const colors = nativeThemeColors[mode];
+  const navigationTheme = useMemo(() => {
+    const baseTheme = mode === 'dark' ? DarkTheme : DefaultTheme;
+    const palette = nativeThemeColors[mode];
+
+    return {
+      ...baseTheme,
+      colors: {
+        ...baseTheme.colors,
+        background: palette.background,
+        card: palette.background,
+        primary: palette.primary,
+      },
+    };
+  }, [mode]);
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <Tab.Navigator
-        tabBar={(props) => <BottomNavBar {...props} />}
         screenOptions={{
           headerShown: false,
+          tabBarActiveTintColor: colors.primary,
         }}
       >
-        <Tab.Screen name="Home">
+        <Tab.Screen
+          name="Home"
+          options={{
+            tabBarIcon: {
+              source: tabIcons.Home,
+              type: 'image',
+            },
+            tabBarLabel: formatMessage({ id: 'navigation.home' }),
+          }}
+        >
           {({ navigation }) => (
             <ScreenFrame edges={['top', 'left', 'right']}>
               <HomeScreen
@@ -227,7 +264,16 @@ function AuthenticatedNavigator({
             </ScreenFrame>
           )}
         </Tab.Screen>
-        <Tab.Screen name="Swiper">
+        <Tab.Screen
+          name="Swiper"
+          options={{
+            tabBarIcon: {
+              source: tabIcons.Swiper,
+              type: 'image',
+            },
+            tabBarLabel: formatMessage({ id: 'navigation.swiper' }),
+          }}
+        >
           {({ navigation }) => (
             <ScreenFrame edges={['top', 'left', 'right']}>
               <SwiperScreen
@@ -236,7 +282,16 @@ function AuthenticatedNavigator({
             </ScreenFrame>
           )}
         </Tab.Screen>
-        <Tab.Screen name="ThemeSettings">
+        <Tab.Screen
+          name="ThemeSettings"
+          options={{
+            tabBarIcon: {
+              source: tabIcons.ThemeSettings,
+              type: 'image',
+            },
+            tabBarLabel: formatMessage({ id: 'navigation.appearance' }),
+          }}
+        >
           {() => (
             <ScreenFrame edges={['top', 'left', 'right']}>
               <ThemeSettingsScreen />
