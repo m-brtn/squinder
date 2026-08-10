@@ -25,15 +25,15 @@ const THEME_STORAGE_KEY = 'squinder.theme';
 export const nativeThemeColors = {
   dark: {
     background: '#0b1020',
-    glassDestructive: 'rgba(251, 113, 133, 0.5)',
-    glassSuccess: 'rgba(52, 211, 153, 0.5)',
+    glassDestructive: 'rgba(251, 113, 133, 0.25)',
+    glassSuccess: 'rgba(52, 211, 153, 0.25)',
     mutedForeground: '#a9b5cb',
     primary: '#7c3aed',
   },
   light: {
     background: '#f7f7fb',
-    glassDestructive: 'rgba(220, 38, 78, 0.5)',
-    glassSuccess: 'rgba(5, 150, 105, 0.5)',
+    glassDestructive: 'rgba(220, 38, 78, 0.25)',
+    glassSuccess: 'rgba(5, 150, 105, 0.25)',
     mutedForeground: '#5f687b',
     primary: '#6d28d9',
   },
