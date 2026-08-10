@@ -15,8 +15,12 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 
 import {
   createUser,
@@ -54,6 +58,8 @@ const tabIcons = {
   Swiper: require('./assets/tab-squinder.png'),
   ThemeSettings: require('./assets/tab-settings.png'),
 } as const;
+const NATIVE_TAB_BAR_HEIGHT =
+  Platform.select({ android: 80, ios: 64 }) ?? 64;
 
 export default function App() {
   return (
@@ -217,7 +223,9 @@ function AuthenticatedNavigator({
 }) {
   const { formatMessage } = useIntl();
   const { mode } = useTheme();
+  const { bottom } = useSafeAreaInsets();
   const colors = nativeThemeColors[mode];
+  const tabBarInset = NATIVE_TAB_BAR_HEIGHT + bottom;
   const navigationTheme = useMemo(() => {
     const baseTheme = mode === 'dark' ? DarkTheme : DefaultTheme;
     const palette = nativeThemeColors[mode];
@@ -239,6 +247,7 @@ function AuthenticatedNavigator({
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: colors.primary,
+          tabBarControllerMode: 'tabBar',
         }}
       >
         <Tab.Screen
@@ -252,7 +261,10 @@ function AuthenticatedNavigator({
           }}
         >
           {({ navigation }) => (
-            <ScreenFrame edges={['top', 'left', 'right']}>
+            <ScreenFrame
+              bottomInset={tabBarInset}
+              edges={['top', 'left', 'right']}
+            >
               <HomeScreen
                 user={user}
                 onOpenThemeSettings={() =>
@@ -275,7 +287,10 @@ function AuthenticatedNavigator({
           }}
         >
           {({ navigation }) => (
-            <ScreenFrame edges={['top', 'left', 'right']}>
+            <ScreenFrame
+              bottomInset={tabBarInset}
+              edges={['top', 'left', 'right']}
+            >
               <SwiperScreen
                 onOpenMenu={() => navigation.navigate('ThemeSettings')}
               />
@@ -293,7 +308,10 @@ function AuthenticatedNavigator({
           }}
         >
           {() => (
-            <ScreenFrame edges={['top', 'left', 'right']}>
+            <ScreenFrame
+              bottomInset={tabBarInset}
+              edges={['top', 'left', 'right']}
+            >
               <ThemeSettingsScreen />
             </ScreenFrame>
           )}

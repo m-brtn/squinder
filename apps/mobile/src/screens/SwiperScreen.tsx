@@ -8,8 +8,14 @@ import {
   ArrowCounterClockwiseIcon,
   ListIcon,
 } from 'phosphor-react-native';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useIntl } from 'react-intl';
-import { ImageBackground, useWindowDimensions } from 'react-native';
+import {
+  ImageBackground,
+  StyleSheet,
+  useWindowDimensions,
+} from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Extrapolation,
@@ -37,6 +43,7 @@ import { VStack } from '@/components/ui/vstack';
 
 import { createPhosphorIcon } from '../components/PhosphorIcon';
 import { swiperProfiles } from '../constants/swiperProfiles';
+import { nativeThemeColors, useTheme } from '../theme/ThemeProvider';
 
 type Props = {
   onOpenMenu: () => void;
@@ -49,6 +56,14 @@ const AnimatedImageBackground =
   Animated.createAnimatedComponent(ImageBackground);
 const SWIPE_THRESHOLD = 100;
 const IMAGE_FADE_DURATION = 400;
+const VERTICAL_DRAG_FACTOR = 0.18;
+// Native gradients cannot consume NativeWind's semantic scrim token directly.
+const PROFILE_SCRIM_GRADIENT = [
+  'rgba(0, 0, 0, 0)',
+  'rgba(0, 0, 0, 0.38)',
+  'rgba(0, 0, 0, 0.9)',
+] as const;
+const LIQUID_GLASS_AVAILABLE = isLiquidGlassAvailable();
 const UndoBoldIcon = createPhosphorIcon(
   ArrowCounterClockwiseIcon,
   'bold',
@@ -58,6 +73,8 @@ const MenuBoldIcon = createPhosphorIcon(ListIcon, 'bold', 28);
 
 export function SwiperScreen({ onOpenMenu }: Props) {
   const { formatMessage } = useIntl();
+  const { mode } = useTheme();
+  const colors = nativeThemeColors[mode];
   const { width } = useWindowDimensions();
   const [profileIndex, setProfileIndex] = useState(0);
   const translateX = useSharedValue(0);
@@ -112,10 +129,23 @@ export function SwiperScreen({ onOpenMenu }: Props) {
       Gesture.Pan()
         .onUpdate((event) => {
           translateX.value = event.translationX;
-          translateY.value = event.translationY * 0.18;
+          translateY.value = event.translationY * VERTICAL_DRAG_FACTOR;
         })
         .onEnd((event) => {
           const projectedX = event.translationX + event.velocityX * 0.12;
+          const projectedY = event.translationY + event.velocityY * 0.12;
+
+          if (
+            projectedY <= -SWIPE_THRESHOLD &&
+            Math.abs(projectedY) > Math.abs(projectedX)
+          ) {
+            translateY.value = withTiming(-700, { duration: 240 }, (done) => {
+              if (done) {
+                runOnJS(advanceProfile)();
+              }
+            });
+            return;
+          }
 
           if (Math.abs(projectedX) >= SWIPE_THRESHOLD) {
             const destination =
@@ -155,26 +185,8 @@ export function SwiperScreen({ onOpenMenu }: Props) {
     };
   });
 
-  const likeStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      translateX.value,
-      [0, SWIPE_THRESHOLD],
-      [0, 1],
-      Extrapolation.CLAMP,
-    ),
-  }));
-
-  const nopeStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      translateX.value,
-      [-SWIPE_THRESHOLD, 0],
-      [1, 0],
-      Extrapolation.CLAMP,
-    ),
-  }));
-
   return (
-    <Box className="w-full max-w-3xl flex-1 self-center bg-background px-3 pb-4 pt-2">
+    <Box className="w-full max-w-3xl flex-1 self-center bg-background px-2 pb-2 pt-2">
       <HStack space="sm" className="items-center px-1">
         <Text
           bold
@@ -206,47 +218,25 @@ export function SwiperScreen({ onOpenMenu }: Props) {
       <Box className="relative mt-3 min-h-96 flex-1">
         <GestureDetector gesture={panGesture}>
           <Box className="absolute inset-0">
-          {[nextProfile, profile].map((visibleProfile, index) => {
-            const isActive = index === 1;
+            {[nextProfile, profile].map((visibleProfile, index) => {
+              const isActive = index === 1;
 
-            return (
-              <AnimatedBox
-                key={visibleProfile.id}
-                className="absolute inset-0 overflow-hidden rounded-3xl bg-card shadow-hard-4"
-                style={isActive ? cardStyle : undefined}
-              >
-                <ProfileCard
-                  age={visibleProfile.age}
-                  bio={formatMessage({ id: visibleProfile.bioMessageId })}
-                  distance={visibleProfile.distance}
-                  imageUrl={visibleProfile.imageUrl}
-                  name={formatMessage({ id: visibleProfile.nameMessageId })}
-                />
-
-                {isActive ? (
-                  <>
-                    <AnimatedBox
-                      className="absolute left-5 top-6 rotate-[-10deg] rounded-lg border-4 border-success px-3 py-1"
-                      style={likeStyle}
-                    >
-                      <Text bold className="text-success" size="2xl">
-                        {formatMessage({ id: 'swiper.likeStamp' })}
-                      </Text>
-                    </AnimatedBox>
-
-                    <AnimatedBox
-                      className="absolute right-5 top-6 rotate-[10deg] rounded-lg border-4 border-destructive px-3 py-1"
-                      style={nopeStyle}
-                    >
-                      <Text bold className="text-destructive" size="2xl">
-                        {formatMessage({ id: 'swiper.nopeStamp' })}
-                      </Text>
-                    </AnimatedBox>
-                  </>
-                ) : null}
-              </AnimatedBox>
-            );
-          })}
+              return (
+                <AnimatedBox
+                  key={visibleProfile.id}
+                  className="absolute inset-0 overflow-hidden rounded-3xl bg-card shadow-hard-4"
+                  style={isActive ? cardStyle : undefined}
+                >
+                  <ProfileCard
+                    age={visibleProfile.age}
+                    bio={formatMessage({ id: visibleProfile.bioMessageId })}
+                    distance={visibleProfile.distance}
+                    imageUrl={visibleProfile.imageUrl}
+                    name={formatMessage({ id: visibleProfile.nameMessageId })}
+                  />
+                </AnimatedBox>
+              );
+            })}
           </Box>
         </GestureDetector>
 
@@ -254,36 +244,78 @@ export function SwiperScreen({ onOpenMenu }: Props) {
           space="lg"
           className="absolute inset-x-0 bottom-5 z-10 items-center justify-center"
         >
-          <Button
-            accessibilityLabel={formatMessage({ id: 'swiper.actions.pass' })}
-            className="h-16 w-16 rounded-full border-0 bg-background/90 shadow-hard-4"
-            onPress={() => animateSwipe('left')}
-            size="icon"
-            variant="outline"
+          <GlassView
+            colorScheme={mode}
+            glassEffectStyle="clear"
+            isInteractive
+            style={styles.largeGlassButton}
+            tintColor={colors.glassDestructive}
           >
-            <ButtonIcon as={CloseIcon} className="h-8 w-8 text-destructive" />
-          </Button>
-          <Button
-            accessibilityLabel={formatMessage({
-              id: 'swiper.actions.superLike',
-            })}
-            className="h-14 w-14 rounded-full border-0 bg-primary shadow-hard-4"
-            onPress={() => animateSwipe('up')}
-            size="icon"
+            <Button
+              accessibilityLabel={formatMessage({
+                id: 'swiper.actions.pass',
+              })}
+              className={`h-full w-full rounded-full border-0 ${
+                LIQUID_GLASS_AVAILABLE ? 'bg-transparent' : 'bg-destructive'
+              }`}
+              onPress={() => animateSwipe('left')}
+              size="icon"
+              variant="ghost"
+            >
+              <ButtonIcon
+                as={CloseIcon}
+                className="h-8 w-8 text-foreground"
+              />
+            </Button>
+          </GlassView>
+          <GlassView
+            colorScheme={mode}
+            glassEffectStyle="clear"
+            isInteractive
+            style={styles.mediumGlassButton}
           >
-            <ButtonIcon as={StarIcon} className="h-7 w-7" />
-          </Button>
-          <Button
-            accessibilityLabel={formatMessage({ id: 'swiper.actions.like' })}
-            className="h-16 w-16 rounded-full border-0 bg-success shadow-hard-4"
-            onPress={() => animateSwipe('right')}
-            size="icon"
+            <Button
+              accessibilityLabel={formatMessage({
+                id: 'swiper.actions.superLike',
+              })}
+              className={`h-full w-full rounded-full border-0 ${
+                LIQUID_GLASS_AVAILABLE
+                  ? 'bg-transparent'
+                  : 'bg-background/80'
+              }`}
+              onPress={() => animateSwipe('up')}
+              size="icon"
+              variant="ghost"
+            >
+              <ButtonIcon as={StarIcon} className="h-7 w-7 text-foreground" />
+            </Button>
+          </GlassView>
+          <GlassView
+            colorScheme={mode}
+            glassEffectStyle="clear"
+            isInteractive
+            style={styles.largeGlassButton}
+            tintColor={colors.glassSuccess}
           >
-            <ButtonIcon as={FavouriteIcon} className="h-8 w-8" />
-          </Button>
+            <Button
+              accessibilityLabel={formatMessage({
+                id: 'swiper.actions.like',
+              })}
+              className={`h-full w-full rounded-full border-0 ${
+                LIQUID_GLASS_AVAILABLE ? 'bg-transparent' : 'bg-success'
+              }`}
+              onPress={() => animateSwipe('right')}
+              size="icon"
+              variant="ghost"
+            >
+              <ButtonIcon
+                as={FavouriteIcon}
+                className="h-8 w-8 text-foreground"
+              />
+            </Button>
+          </GlassView>
         </HStack>
       </Box>
-
     </Box>
   );
 }
@@ -325,7 +357,13 @@ function ProfileCard({
         source={{ uri: imageUrl }}
         style={[{ flex: 1, justifyContent: 'flex-end' }, imageStyle]}
       >
-        <Box className="bg-scrim/65 px-5 pb-24 pt-6">
+        <LinearGradient
+          colors={PROFILE_SCRIM_GRADIENT}
+          locations={[0.42, 0.68, 1]}
+          pointerEvents="none"
+          style={StyleSheet.absoluteFill}
+        />
+        <Box className="px-5 pb-24 pt-6">
           <VStack space="sm">
             <Box className="self-start rounded-full bg-primary px-3 py-1">
               <Text bold className="text-primary-foreground" size="xs">
@@ -372,3 +410,18 @@ function ProfileCard({
     </Box>
   );
 }
+
+const styles = StyleSheet.create({
+  largeGlassButton: {
+    borderRadius: 32,
+    height: 64,
+    overflow: 'hidden',
+    width: 64,
+  },
+  mediumGlassButton: {
+    borderRadius: 28,
+    height: 56,
+    overflow: 'hidden',
+    width: 56,
+  },
+});
