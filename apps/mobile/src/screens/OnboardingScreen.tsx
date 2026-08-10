@@ -1,6 +1,17 @@
+import {
+  GENDERS,
+  INTEREST_CATEGORIES,
+  INTERESTED_IN,
+  MAX_PROFILE_INTERESTS,
+} from '@squinder/shared';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+} from 'react-native';
 
 import { Box } from '@/components/ui/box';
 import {
@@ -34,7 +45,7 @@ import type { Gender, LookingFor, User } from '../api/client';
 
 type OnboardingInput = Pick<
   User,
-  'name' | 'gender' | 'lookingFor' | 'birthDate'
+  'name' | 'gender' | 'lookingFor' | 'birthDate' | 'interests'
 >;
 
 type Props = {
@@ -43,38 +54,49 @@ type Props = {
   onComplete: (input: OnboardingInput) => Promise<void>;
 };
 
-const genderOptions: Array<{ value: Gender; messageId: string }> = [
-  { value: 'male', messageId: 'onboarding.gender.male' },
-  { value: 'female', messageId: 'onboarding.gender.female' },
-  { value: 'non_binary', messageId: 'onboarding.gender.nonBinary' },
-  {
-    value: 'prefer_not_to_say',
-    messageId: 'onboarding.gender.preferNotToSay',
-  },
-];
+const genderMessageIds: Record<Gender, string> = {
+  male: 'onboarding.gender.male',
+  female: 'onboarding.gender.female',
+  non_binary: 'onboarding.gender.nonBinary',
+  prefer_not_to_say: 'onboarding.gender.preferNotToSay',
+};
+
+const genderOptions: Array<{ value: Gender; messageId: string }> =
+  GENDERS.map((value) => ({
+    value,
+    messageId: genderMessageIds[value],
+  }));
+
+const lookingForMessageIds: Record<LookingFor, string> = {
+  male: 'onboarding.lookingFor.male',
+  female: 'onboarding.lookingFor.female',
+  everyone: 'onboarding.lookingFor.everyone',
+};
 
 const lookingForOptions: Array<{
   value: LookingFor;
   messageId: string;
-}> = [
-  { value: 'male', messageId: 'onboarding.lookingFor.male' },
-  { value: 'female', messageId: 'onboarding.lookingFor.female' },
-  { value: 'everyone', messageId: 'onboarding.lookingFor.everyone' },
-];
+}> = INTERESTED_IN.map((value) => ({
+  value,
+  messageId: lookingForMessageIds[value],
+}));
 
 const titleIds = [
   'onboarding.name.title',
   'onboarding.gender.title',
   'onboarding.lookingFor.title',
   'onboarding.birthDate.title',
+  'onboarding.interests.title',
 ];
 const subtitles = [
   'onboarding.name.subtitle',
   'onboarding.gender.subtitle',
   'onboarding.lookingFor.subtitle',
   'onboarding.birthDate.subtitle',
+  'onboarding.interests.subtitle',
 ];
 const totalSteps = titleIds.length;
+const interestsStep = 4;
 
 type ChoiceRadioGroupProps = {
   onChange: (value: string) => void;
@@ -108,6 +130,63 @@ function ChoiceRadioGroup({
   );
 }
 
+type InterestChipsProps = {
+  selected: string[];
+  onToggle: (slug: string) => void;
+};
+
+function InterestChips({ selected, onToggle }: InterestChipsProps) {
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
+  const limitReached = selected.length >= MAX_PROFILE_INTERESTS;
+
+  return (
+    <VStack space="lg">
+      {INTEREST_CATEGORIES.map((category) => (
+        <VStack key={category.slug} space="sm">
+          <Text bold className="text-foreground" size="md">
+            {category.label}
+          </Text>
+          <Box className="flex-row flex-wrap gap-2">
+            {category.interests.map((item) => {
+              const isSelected = selectedSet.has(item.slug);
+              const isDisabled = !isSelected && limitReached;
+
+              return (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{
+                    selected: isSelected,
+                    disabled: isDisabled,
+                  }}
+                  className={`rounded-full border px-4 py-2 ${
+                    isSelected
+                      ? 'border-primary bg-primary'
+                      : 'border-border bg-card'
+                  } ${isDisabled ? 'opacity-40' : ''}`}
+                  disabled={isDisabled}
+                  key={item.slug}
+                  onPress={() => onToggle(item.slug)}
+                >
+                  <Text
+                    className={
+                      isSelected
+                        ? 'text-primary-foreground'
+                        : 'text-foreground'
+                    }
+                    size="sm"
+                  >
+                    {item.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </Box>
+        </VStack>
+      ))}
+    </VStack>
+  );
+}
+
 export function OnboardingScreen({
   error,
   submitting,
@@ -123,6 +202,17 @@ export function OnboardingScreen({
   const [day, setDay] = useState('15');
   const [month, setMonth] = useState('05');
   const [year, setYear] = useState('1995');
+  const [interests, setInterests] = useState<string[]>([]);
+
+  const toggleInterest = (slug: string) => {
+    setInterests((current) =>
+      current.includes(slug)
+        ? current.filter((item) => item !== slug)
+        : current.length < MAX_PROFILE_INTERESTS
+          ? [...current, slug]
+          : current,
+    );
+  };
 
   const birthDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   const dateIsValid = useMemo(() => {
@@ -138,7 +228,7 @@ export function OnboardingScreen({
   const canContinue =
     step === 0
       ? name.trim().length >= 2
-      : step === totalSteps - 1
+      : step === 3
         ? dateIsValid
         : true;
 
@@ -154,6 +244,7 @@ export function OnboardingScreen({
       gender,
       lookingFor,
       birthDate,
+      interests,
     });
   };
 
@@ -300,6 +391,28 @@ export function OnboardingScreen({
                   </Input>
                 </FormControl>
               </HStack>
+            )}
+
+            {step === interestsStep && (
+              <VStack space="md">
+                <Text
+                  bold
+                  className="tracking-wider text-muted-foreground"
+                  size="xs"
+                >
+                  {formatMessage(
+                    { id: 'onboarding.interests.counter' },
+                    {
+                      count: interests.length,
+                      max: MAX_PROFILE_INTERESTS,
+                    },
+                  )}
+                </Text>
+                <InterestChips
+                  onToggle={toggleInterest}
+                  selected={interests}
+                />
+              </VStack>
             )}
 
             {error && (

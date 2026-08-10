@@ -52,8 +52,10 @@ For subsequent sessions, run `make dev` from the repository root and open the
 installed Squinder app. Cloud development builds remain available through
 `make build-ios`, `make build-android`, and `make build-dev`.
 
-The local API runs on port `3001` because port `3000` is already occupied in
-the current development environment. Railway supplies its own `PORT`.
+Squinder owns the local `713x` port range so it never clashes with other
+projects: `7131` API, `7132` CRM, `7133` MinIO S3, `7134` MinIO console,
+`7135` PostgreSQL. Railway supplies its own `PORT`. Run `make status` to
+see what is currently up.
 
 The Expo app derives the API host from the Expo development server. Override it
 with `EXPO_PUBLIC_API_URL` when using a remote API.

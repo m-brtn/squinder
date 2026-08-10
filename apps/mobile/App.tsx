@@ -28,7 +28,6 @@ import {
   type User,
 } from './src/api/client';
 import { ScreenFrame } from './src/components/ScreenFrame';
-import { preloadSwiperImages } from './src/constants/swiperProfiles';
 import { I18nProvider } from './src/i18n/I18nProvider';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
@@ -123,14 +122,11 @@ function AppContent() {
     void restoreSession();
   }, [restoreSession]);
 
-  useEffect(() => {
-    if (user) {
-      void preloadSwiperImages();
-    }
-  }, [user]);
-
   const handleComplete = async (
-    input: Pick<User, 'name' | 'gender' | 'lookingFor' | 'birthDate'>,
+    input: Pick<
+      User,
+      'name' | 'gender' | 'lookingFor' | 'birthDate' | 'interests'
+    >,
   ) => {
     setSubmitting(true);
     setSubmitError(false);
@@ -293,6 +289,7 @@ function AuthenticatedNavigator({
             >
               <SwiperScreen
                 onOpenMenu={() => navigation.navigate('ThemeSettings')}
+                user={user}
               />
             </ScreenFrame>
           )}

@@ -1,5 +1,7 @@
+import { INTEREST_LABEL_BY_SLUG } from '@squinder/shared';
 import {
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useState,
@@ -12,6 +14,7 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useIntl } from 'react-intl';
 import {
+  Image,
   ImageBackground,
   StyleSheet,
   useWindowDimensions,
@@ -28,8 +31,10 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Box } from '@/components/ui/box';
-import { Button, ButtonIcon } from '@/components/ui/button';
+import { Button, ButtonIcon, ButtonText } from '@/components/ui/button';
+import { Center } from '@/components/ui/center';
 import { HStack } from '@/components/ui/hstack';
+import { Spinner } from '@/components/ui/spinner';
 import {
   CloseIcon,
   FavouriteIcon,
@@ -41,15 +46,62 @@ import {
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 
+import {
+  getPersonas,
+  resolvePhotoUrl,
+  type Persona,
+  type User,
+} from '../api/client';
 import { createPhosphorIcon } from '../components/PhosphorIcon';
-import { swiperProfiles } from '../constants/swiperProfiles';
 import { nativeThemeColors, useTheme } from '../theme/ThemeProvider';
 
 type Props = {
   onOpenMenu: () => void;
+  user: User;
 };
 
 type SwipeDirection = 'left' | 'right' | 'up';
+
+type SwiperCard = {
+  readonly id: string;
+  readonly name: string;
+  readonly age: number | null;
+  readonly bio: string;
+  readonly imageUrl: string | null;
+  readonly location: string;
+  readonly interests: readonly string[];
+};
+
+const ageFromBirthDate = (birthDate: string): number | null => {
+  const date = new Date(`${birthDate}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const now = new Date();
+  let age = now.getUTCFullYear() - date.getUTCFullYear();
+  const monthDiff = now.getUTCMonth() - date.getUTCMonth();
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && now.getUTCDate() < date.getUTCDate())
+  ) {
+    age -= 1;
+  }
+  return age;
+};
+
+const toCard = (persona: Persona): SwiperCard => ({
+  id: persona.id,
+  name: persona.name,
+  age: ageFromBirthDate(persona.birthDate),
+  bio: persona.bio,
+  imageUrl:
+    persona.photoUrls[0] != null
+      ? resolvePhotoUrl(persona.photoUrls[0])
+      : null,
+  location: [persona.city, persona.country].filter(Boolean).join(', '),
+  interests: persona.interests.map(
+    (slug) => INTEREST_LABEL_BY_SLUG.get(slug) ?? slug,
+  ),
+});
 
 const AnimatedBox = Animated.createAnimatedComponent(Box);
 const AnimatedImageBackground =
@@ -71,18 +123,61 @@ const UndoBoldIcon = createPhosphorIcon(
 );
 const MenuBoldIcon = createPhosphorIcon(ListIcon, 'bold', 28);
 
-export function SwiperScreen({ onOpenMenu }: Props) {
+export function SwiperScreen({ onOpenMenu, user }: Props) {
   const { formatMessage } = useIntl();
   const { mode } = useTheme();
   const colors = nativeThemeColors[mode];
   const { width } = useWindowDimensions();
+  const [personas, setPersonas] = useState<Persona[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [profileIndex, setProfileIndex] = useState(0);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
-  const profile = swiperProfiles[profileIndex % swiperProfiles.length];
+  const loadPersonas = useCallback(async () => {
+    setLoadError(false);
+    setPersonas(null);
+    try {
+      const result = await getPersonas();
+      setPersonas(result.personas);
+      for (const persona of result.personas) {
+        const photo = persona.photoUrls[0];
+        if (photo != null) {
+          void Image.prefetch(resolvePhotoUrl(photo)).catch(() => {});
+        }
+      }
+    } catch {
+      setLoadError(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadPersonas();
+  }, [loadPersonas]);
+
+  const deck = useMemo(() => {
+    if (personas == null) return [];
+
+    return personas
+      .filter((persona) => {
+        const userWantsPersona =
+          user.lookingFor === 'everyone' ||
+          persona.gender === user.lookingFor;
+        const personaWantsUser =
+          persona.interestedIn === 'everyone' ||
+          persona.interestedIn === user.gender;
+        return userWantsPersona && personaWantsUser;
+      })
+      .map(toCard);
+  }, [personas, user.gender, user.lookingFor]);
+
+  useEffect(() => {
+    setProfileIndex(0);
+  }, [deck]);
+
+  const profile = deck.length > 0 ? deck[profileIndex % deck.length] : null;
   const nextProfile =
-    swiperProfiles[(profileIndex + 1) % swiperProfiles.length];
+    deck.length > 0 ? deck[(profileIndex + 1) % deck.length] : null;
 
   useLayoutEffect(() => {
     translateX.value = 0;
@@ -216,10 +311,54 @@ export function SwiperScreen({ onOpenMenu }: Props) {
       </HStack>
 
       <Box className="relative mt-3 min-h-96 flex-1">
+        {personas == null && !loadError && (
+          <Center className="absolute inset-0">
+            <Spinner className="text-primary" size="large" />
+          </Center>
+        )}
+
+        {loadError && (
+          <Center className="absolute inset-0 px-8">
+            <VStack space="lg" className="items-center">
+              <Text className="text-center text-muted-foreground">
+                {formatMessage({ id: 'swiper.loadError' })}
+              </Text>
+              <Button onPress={() => void loadPersonas()} size="lg">
+                <ButtonText>
+                  {formatMessage({ id: 'actions.retry' })}
+                </ButtonText>
+              </Button>
+            </VStack>
+          </Center>
+        )}
+
+        {personas != null && !loadError && deck.length === 0 && (
+          <Center className="absolute inset-0 px-8">
+            <VStack space="lg" className="items-center">
+              <Text bold className="text-center text-foreground" size="xl">
+                {formatMessage({ id: 'swiper.empty.title' })}
+              </Text>
+              <Text className="text-center text-muted-foreground">
+                {formatMessage({ id: 'swiper.empty.subtitle' })}
+              </Text>
+              <Button onPress={() => void loadPersonas()} size="lg">
+                <ButtonText>
+                  {formatMessage({ id: 'actions.retry' })}
+                </ButtonText>
+              </Button>
+            </VStack>
+          </Center>
+        )}
+
         <GestureDetector gesture={panGesture}>
           <Box className="absolute inset-0">
-            {[nextProfile, profile].map((visibleProfile, index) => {
-              const isActive = index === 1;
+            {(profile != null && nextProfile != null && deck.length > 1
+              ? [nextProfile, profile]
+              : profile != null
+                ? [profile]
+                : []
+            ).map((visibleProfile, index, cards) => {
+              const isActive = index === cards.length - 1;
 
               return (
                 <AnimatedBox
@@ -229,10 +368,11 @@ export function SwiperScreen({ onOpenMenu }: Props) {
                 >
                   <ProfileCard
                     age={visibleProfile.age}
-                    bio={formatMessage({ id: visibleProfile.bioMessageId })}
-                    distance={visibleProfile.distance}
+                    bio={visibleProfile.bio}
                     imageUrl={visibleProfile.imageUrl}
-                    name={formatMessage({ id: visibleProfile.nameMessageId })}
+                    interests={visibleProfile.interests}
+                    location={visibleProfile.location}
+                    name={visibleProfile.name}
                   />
                 </AnimatedBox>
               );
@@ -240,6 +380,7 @@ export function SwiperScreen({ onOpenMenu }: Props) {
           </Box>
         </GestureDetector>
 
+        {profile != null && (
         <HStack
           space="lg"
           className="absolute inset-x-0 bottom-5 z-10 items-center justify-center"
@@ -315,24 +456,27 @@ export function SwiperScreen({ onOpenMenu }: Props) {
             </Button>
           </GlassView>
         </HStack>
+        )}
       </Box>
     </Box>
   );
 }
 
 type ProfileCardProps = {
-  readonly age: number;
+  readonly age: number | null;
   readonly bio: string;
-  readonly distance: number;
-  readonly imageUrl: string;
+  readonly imageUrl: string | null;
+  readonly interests: readonly string[];
+  readonly location: string;
   readonly name: string;
 };
 
 function ProfileCard({
   age,
   bio,
-  distance,
   imageUrl,
+  interests,
+  location,
   name,
 }: ProfileCardProps) {
   const { formatMessage } = useIntl();
@@ -345,39 +489,32 @@ function ProfileCard({
     imageOpacity.value = withTiming(1, { duration: IMAGE_FADE_DURATION });
   }, [imageOpacity]);
 
-  return (
-    <Box className="absolute inset-0 overflow-hidden rounded-3xl bg-card">
-      <AnimatedImageBackground
-        accessibilityLabel={formatMessage(
-          { id: 'swiper.profilePhoto' },
-          { name },
-        )}
-        onLoad={revealImage}
-        resizeMode="cover"
-        source={{ uri: imageUrl }}
-        style={[{ flex: 1, justifyContent: 'flex-end' }, imageStyle]}
-      >
-        <LinearGradient
-          colors={PROFILE_SCRIM_GRADIENT}
-          locations={[0.42, 0.68, 1]}
-          pointerEvents="none"
-          style={StyleSheet.absoluteFill}
-        />
-        <Box className="px-5 pb-24 pt-6">
-          <VStack space="sm">
-            <Box className="self-start rounded-full bg-primary px-3 py-1">
-              <Text bold className="text-primary-foreground" size="xs">
-                {formatMessage({ id: 'swiper.newHere' })}
-              </Text>
-            </Box>
-            <HStack space="sm" className="items-end">
-              <Text bold className="text-primary-foreground" size="4xl">
-                {name}
-              </Text>
+  const overlay = (
+    <>
+      <LinearGradient
+        colors={PROFILE_SCRIM_GRADIENT}
+        locations={[0.42, 0.68, 1]}
+        pointerEvents="none"
+        style={StyleSheet.absoluteFill}
+      />
+      <Box className="px-5 pb-24 pt-6">
+        <VStack space="sm">
+          <Box className="self-start rounded-full bg-primary px-3 py-1">
+            <Text bold className="text-primary-foreground" size="xs">
+              {formatMessage({ id: 'swiper.newHere' })}
+            </Text>
+          </Box>
+          <HStack space="sm" className="items-end">
+            <Text bold className="text-primary-foreground" size="4xl">
+              {name}
+            </Text>
+            {age != null && (
               <Text className="pb-0.5 text-primary-foreground" size="3xl">
                 {age}
               </Text>
-            </HStack>
+            )}
+          </HStack>
+          {bio.length > 0 && (
             <HStack space="sm" className="items-center">
               <Icon
                 as={MessageCircleIcon}
@@ -391,6 +528,8 @@ function ProfileCard({
                 {bio}
               </Text>
             </HStack>
+          )}
+          {location.length > 0 && (
             <HStack space="sm" className="items-center">
               <Icon
                 as={InfoIcon}
@@ -398,14 +537,59 @@ function ProfileCard({
                 size="md"
               />
               <Text className="text-primary-foreground" size="sm">
-                {formatMessage(
-                  { id: 'swiper.distance' },
-                  { distance },
-                )}
+                {location}
               </Text>
             </HStack>
-          </VStack>
+          )}
+          {interests.length > 0 && (
+            <HStack space="sm" className="items-center">
+              <Icon
+                as={StarIcon}
+                className="text-primary-foreground"
+                size="md"
+              />
+              <Text
+                className="flex-1 text-primary-foreground"
+                numberOfLines={1}
+                size="sm"
+              >
+                {interests.join(' · ')}
+              </Text>
+            </HStack>
+          )}
+        </VStack>
+      </Box>
+    </>
+  );
+
+  if (imageUrl == null) {
+    return (
+      <Box className="absolute inset-0 overflow-hidden rounded-3xl bg-card">
+        <Box style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <Center className="absolute inset-0">
+            <Text bold className="text-muted-foreground" size="5xl">
+              {name.slice(0, 1)}
+            </Text>
+          </Center>
+          {overlay}
         </Box>
+      </Box>
+    );
+  }
+
+  return (
+    <Box className="absolute inset-0 overflow-hidden rounded-3xl bg-card">
+      <AnimatedImageBackground
+        accessibilityLabel={formatMessage(
+          { id: 'swiper.profilePhoto' },
+          { name },
+        )}
+        onLoad={revealImage}
+        resizeMode="cover"
+        source={{ uri: imageUrl }}
+        style={[{ flex: 1, justifyContent: 'flex-end' }, imageStyle]}
+      >
+        {overlay}
       </AnimatedImageBackground>
     </Box>
   );

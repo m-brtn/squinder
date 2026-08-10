@@ -1,0 +1,100 @@
+{
+  "personas": [
+    {
+      "key": "maya-barcelona",
+      "name": "Maya",
+      "bio": "Ceramics, city walks, and finding the best ramen in town.",
+      "birthDate": "1998-04-12",
+      "gender": "female",
+      "interestedIn": "male",
+      "smoking": "no",
+      "alcohol": "socially",
+      "workouts": "often",
+      "pets": "want",
+      "kids": "maybe",
+      "country": "Spain",
+      "city": "Barcelona",
+      "photoUrls": ["profiles/women/1/1.png"],
+      "interests": [
+        "foodie",
+        "ramen",
+        "art",
+        "museums",
+        "walking-tours",
+        "pop-music"
+      ]
+    },
+    {
+      "key": "emma-berlin",
+      "name": "Emma",
+      "bio": "Designer by day, amateur chef by night.",
+      "birthDate": "1996-09-03",
+      "gender": "female",
+      "interestedIn": "everyone",
+      "smoking": "sometimes",
+      "alcohol": "socially",
+      "workouts": "rarely",
+      "pets": "have",
+      "kids": "no",
+      "country": "Germany",
+      "city": "Berlin",
+      "photoUrls": ["profiles/women/2/1.png", "profiles/women/2/2.png"],
+      "interests": [
+        "cooking",
+        "art",
+        "thrifting",
+        "techno",
+        "photography",
+        "walking-my-dog"
+      ]
+    },
+    {
+      "key": "sofia-lisbon",
+      "name": "Sofia",
+      "bio": "Always planning the next hike or gallery visit.",
+      "birthDate": "1999-01-27",
+      "gender": "female",
+      "interestedIn": "male",
+      "smoking": "no",
+      "alcohol": "no",
+      "workouts": "often",
+      "pets": "no",
+      "kids": "maybe",
+      "country": "Portugal",
+      "city": "Lisbon",
+      "photoUrls": ["profiles/women/3/1.png", "profiles/women/3/2.png"],
+      "interests": [
+        "hiking",
+        "nature",
+        "museums",
+        "yoga",
+        "self-care",
+        "indie-music"
+      ]
+    },
+    {
+      "key": "alex-amsterdam",
+      "name": "Alex",
+      "bio": "Startup founder who unwinds with long motorcycle rides.",
+      "birthDate": "1993-06-18",
+      "gender": "male",
+      "interestedIn": "female",
+      "smoking": "no",
+      "alcohol": "regularly",
+      "workouts": "often",
+      "pets": "dont_want",
+      "kids": "dont_want",
+      "country": "Netherlands",
+      "city": "Amsterdam",
+      "photoUrls": ["profiles/men/1/1.png"],
+      "interests": [
+        "entrepreneurship",
+        "investing",
+        "motorcycles",
+        "cars",
+        "gym",
+        "bars"
+      ]
+    }
+  ]
+}

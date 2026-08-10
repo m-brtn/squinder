@@ -4,9 +4,12 @@
   "private": true,
   "packageManager": "pnpm@10.33.1",
   "scripts": {
-    "dev:api": "PORT=3001 pnpm --filter @squinder/api dev",
+    "dev:api": "PORT=7131 pnpm --filter @squinder/api dev",
     "dev:mobile": "pnpm --filter @squinder/mobile start",
+    "dev:crm": "pnpm --filter @squinder/crm dev",
     "build:api": "pnpm --filter @squinder/api build",
+    "db:seed": "pnpm --filter @squinder/api db:seed",
+    "status": "node scripts/dev-console.mjs",
     "typecheck": "pnpm --recursive typecheck"
   },
   "devDependencies": {

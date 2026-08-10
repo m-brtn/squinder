@@ -5,6 +5,7 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import fp from 'fastify-plugin'
 import postgres from 'postgres'
 
+import { syncInterests } from '../db/interests'
 import * as schema from '../db/schema'
 
 declare module 'fastify' {
@@ -25,6 +26,7 @@ export default fp(
       await migrate(db, {
         migrationsFolder: join(__dirname, '../../drizzle')
       })
+      await syncInterests(db)
     }
 
     fastify.decorate('db', db)

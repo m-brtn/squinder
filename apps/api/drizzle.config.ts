@@ -6,6 +6,6 @@ export default defineConfig({
   schema: './src/db/schema.ts',
   dbCredentials: {
     url: process.env.DATABASE_URL ??
-      'postgres://squinder:squinder@localhost:5432/squinder'
+      'postgres://squinder:squinder@localhost:7135/squinder'
   }
 })

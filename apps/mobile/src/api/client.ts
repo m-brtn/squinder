@@ -1,13 +1,34 @@
+import type {
+  Alcohol,
+  Gender,
+  Kids,
+  LookingFor,
+  Pets,
+  Smoking,
+  Workouts,
+} from '@squinder/shared';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-export type Gender =
-  | 'male'
-  | 'female'
-  | 'non_binary'
-  | 'prefer_not_to_say';
+export type { Gender, LookingFor };
 
-export type LookingFor = 'male' | 'female' | 'everyone';
+export type Persona = {
+  id: string;
+  name: string;
+  bio: string;
+  birthDate: string;
+  gender: Gender;
+  interestedIn: LookingFor;
+  smoking: Smoking;
+  alcohol: Alcohol;
+  workouts: Workouts;
+  pets: Pets;
+  kids: Kids;
+  country: string;
+  city: string;
+  photoUrls: string[];
+  interests: string[];
+};
 
 export type User = {
   id: string;
@@ -15,6 +36,7 @@ export type User = {
   gender: Gender;
   lookingFor: LookingFor;
   birthDate: string;
+  interests: string[];
   createdAt: string;
 };
 
@@ -30,9 +52,19 @@ const localHost =
 
 export const API_URL =
   process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, '') ??
-  `http://${localHost}:3001`;
+  `http://${localHost}:7131`;
 
 export const WS_URL = `${API_URL.replace(/^http/, 'ws')}/ws`;
+
+// Local S3 (MinIO) public bucket; same host as the API, port 7133.
+export const MEDIA_URL =
+  process.env.EXPO_PUBLIC_MEDIA_URL?.replace(/\/$/, '') ??
+  `http://${localHost}:7133/squinder`;
+
+export const resolvePhotoUrl = (path: string): string =>
+  /^https?:\/\//.test(path)
+    ? path
+    : `${MEDIA_URL}/${path.replace(/^\//, '')}`;
 
 const request = async <T>(
   path: string,
@@ -56,12 +88,18 @@ const request = async <T>(
 export const getHealth = (): Promise<Health> => request('/health');
 
 export const createUser = (
-  input: Pick<User, 'name' | 'gender' | 'lookingFor' | 'birthDate'>,
+  input: Pick<
+    User,
+    'name' | 'gender' | 'lookingFor' | 'birthDate' | 'interests'
+  >,
 ): Promise<{ user: User; sessionToken: string }> =>
   request('/users', {
     method: 'POST',
     body: JSON.stringify(input),
   });
+
+export const getPersonas = (): Promise<{ personas: Persona[] }> =>
+  request('/personas');
 
 export const getCurrentUser = (
   sessionToken: string,

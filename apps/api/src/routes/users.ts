@@ -1,39 +1,29 @@
 import { createHash, randomBytes } from 'node:crypto'
 
+import {
+  GENDERS,
+  INTERESTED_IN,
+  MAX_PROFILE_INTERESTS,
+  isInterestSlug,
+  type Gender,
+  type LookingFor
+} from '@squinder/shared'
 import { eq } from 'drizzle-orm'
 import { type FastifyPluginAsync } from 'fastify'
 
-import { users } from '../db/schema'
-
-type Gender = 'male' | 'female' | 'non_binary' | 'prefer_not_to_say'
-type LookingFor = 'male' | 'female' | 'everyone'
+import { userInterests, users } from '../db/schema'
+import { isValidBirthDate } from '../lib/dates'
 
 interface CreateUserBody {
   name: string
   gender: Gender
   lookingFor: LookingFor
   birthDate: string
+  interests?: string[]
 }
-
-const genders: Gender[] = [
-  'male',
-  'female',
-  'non_binary',
-  'prefer_not_to_say'
-]
-const lookingForOptions: LookingFor[] = ['male', 'female', 'everyone']
 
 const hashToken = (token: string): string =>
   createHash('sha256').update(token).digest('hex')
-
-const isValidBirthDate = (value: string): boolean => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
-
-  const date = new Date(`${value}T00:00:00.000Z`)
-  return !Number.isNaN(date.getTime()) &&
-    date.toISOString().slice(0, 10) === value &&
-    date <= new Date()
-}
 
 const userSelection = {
   id: users.id,
@@ -45,6 +35,15 @@ const userSelection = {
 }
 
 const userRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
+  const loadUserInterests = async (userId: string): Promise<string[]> => {
+    const links = await fastify.db
+      .select({ interestSlug: userInterests.interestSlug })
+      .from(userInterests)
+      .where(eq(userInterests.userId, userId))
+
+    return links.map((link) => link.interestSlug)
+  }
+
   fastify.post<{ Body: CreateUserBody }>('/users', {
     schema: {
       body: {
@@ -53,9 +52,15 @@ const userRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
         required: ['name', 'gender', 'lookingFor', 'birthDate'],
         properties: {
           name: { type: 'string', minLength: 2, maxLength: 80 },
-          gender: { type: 'string', enum: genders },
-          lookingFor: { type: 'string', enum: lookingForOptions },
-          birthDate: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' }
+          gender: { type: 'string', enum: [...GENDERS] },
+          lookingFor: { type: 'string', enum: [...INTERESTED_IN] },
+          birthDate: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+          interests: {
+            type: 'array',
+            maxItems: MAX_PROFILE_INTERESTS,
+            uniqueItems: true,
+            items: { type: 'string', minLength: 1, maxLength: 80 }
+          }
         }
       }
     }
@@ -65,19 +70,42 @@ const userRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
       return await reply.badRequest('Invalid name or birth date')
     }
 
-    const sessionToken = randomBytes(32).toString('hex')
-    const [user] = await fastify.db
-      .insert(users)
-      .values({
-        name,
-        gender: request.body.gender,
-        lookingFor: request.body.lookingFor,
-        birthDate: request.body.birthDate,
-        sessionTokenHash: hashToken(sessionToken)
-      })
-      .returning(userSelection)
+    const interests = request.body.interests ?? []
+    const invalid = interests.filter((slug) => !isInterestSlug(slug))
+    if (invalid.length > 0) {
+      return await reply.badRequest(
+        `Unknown interests: ${invalid.join(', ')}`
+      )
+    }
 
-    return reply.code(201).send({ user, sessionToken })
+    const sessionToken = randomBytes(32).toString('hex')
+    const user = await fastify.db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(users)
+        .values({
+          name,
+          gender: request.body.gender,
+          lookingFor: request.body.lookingFor,
+          birthDate: request.body.birthDate,
+          sessionTokenHash: hashToken(sessionToken)
+        })
+        .returning(userSelection)
+
+      if (interests.length > 0) {
+        await tx.insert(userInterests).values(
+          interests.map((slug) => ({
+            userId: row.id,
+            interestSlug: slug
+          }))
+        )
+      }
+
+      return row
+    })
+
+    return reply
+      .code(201)
+      .send({ user: { ...user, interests }, sessionToken })
   })
 
   fastify.get('/me', async (request, reply) => {
@@ -100,7 +128,8 @@ const userRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
       return await reply.unauthorized('Invalid session token')
     }
 
-    return { user }
+    const interests = await loadUserInterests(user.id)
+    return { user: { ...user, interests } }
   })
 }
 

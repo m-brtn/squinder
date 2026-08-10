@@ -1,0 +1,20 @@
+{
+  "name": "@squinder/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared profile enums and the interest matrix for Squinder apps",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "react-native": "src/index.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "pnpm build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "~7.0.2"
+  }
+}
